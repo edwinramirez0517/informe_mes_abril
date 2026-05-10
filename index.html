@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Gerencial CEDIS - El Compadre 2026</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+    
+    <style>
+        /* === MANUAL DE MARCA 2025 === */
+        :root {
+            --primary: #012094;      /* Azul Corporativo */
+            --accent: #E1251B;       /* Rojo Corporativo */
+            --bg-main: #f4f6f9;
+            --bg-card: #ffffff;
+            --text-primary: #2d3436;
+            --text-secondary: #636e72;
+            --border: #dfe6e9;
+            --success: #27ae60;
+            --warning: #f39c12;
+            --danger: #E1251B;
+            --shadow: 0 4px 6px rgba(0,0,0,0.05);
+            --radius: 12px;
+            --sidebar-width: 280px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Open Sans', sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Montserrat', sans-serif; /* Similar a Batangas Bold */
+        }
+
+        /* === SIDEBAR (MENÚ LATERAL) === */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: var(--sidebar-width);
+            height: 100vh;
+            background-color: var(--primary);
+            color: white;
+            transition: transform 0.3s ease;
+            z-index: 1000;
+            overflow-y: auto;
+            box-shadow: 4px 0 10px rgba(0,0,0,0.1);
+        }
+
+        .sidebar.collapsed {
+            transform: translateX(-100%);
+        }
+
+        .sidebar-header {
+            padding: 24px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .sidebar-header h2 {
+            font-weight: 800;
+            font-size: 1.5rem;
+            letter-spacing: 1px;
+        }
+
+        .sidebar-header p {
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.7);
+        }
+
+        .nav-menu { padding: 20px 0; }
+        
+        .nav-section-title {
+            padding: 10px 24px;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: rgba(255,255,255,0.5);
+            font-weight: 700;
+            margin-top: 10px;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 12px 24px;
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.2s;
+            border-left: 4px solid transparent;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            background-color: rgba(255,255,255,0.1);
+            color: white;
+            border-left-color: var(--accent);
+        }
+
+        /* === MAIN CONTENT === */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            min-height: 100vh;
+            transition: margin-left 0.3s ease;
+        }
+
+        .main-content.expanded {
+            margin-left: 0;
+        }
+
+        /* === TOP HEADER === */
+        .top-header {
+            background: var(--bg-card);
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 999;
+        }
+
+        .menu-toggle {
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--primary);
+            background: none;
+            border: none;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .menu-toggle h1 {
+            font-size: 1.2rem;
+            margin: 0;
+            color: var(--primary);
+        }
+
+        .header-info {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .badge-gerencia {
+            background-color: var(--accent);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.8rem;
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        /* === SECTIONS === */
+        .section-container {
+            padding: 30px;
+            display: none;
+            animation: fadeIn 0.4s ease-in-out;
+        }
+
+        .section-container.active {
+            display: block;
+        }
+
+        .section-title {
+            font-size: 1.8rem;
+            color: var(--primary);
+            margin-bottom: 5px;
+        }
+
+        .section-subtitle {
+            color: var(--text-secondary);
+            margin-bottom: 25px;
+            font-size: 0.95rem;
+        }
+
+        /* === KPI CARDS === */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .kpi-card {
+            background: var(--bg-card);
+            padding: 20px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            border-top: 4px solid var(--primary);
+        }
+
+        .kpi-card.rojo { border-top-color: var(--accent); }
+        .kpi-card.verde { border-top-color: var(--success); }
+
+        .kpi-title {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .kpi-value {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--primary);
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        .kpi-trend {
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .trend-up { color: var(--success); }
+        .trend-down { color: var(--accent); }
+
+        /* === CHARTS GRID === */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .charts-grid.full {
+            grid-template-columns: 1fr;
+        }
+
+        .chart-box {
+            background: var(--bg-card);
+            padding: 20px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+        }
+
+        .chart-header {
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 15px;
+            font-family: 'Montserrat', sans-serif;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* === TABLES === */
+        .table-container {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            margin-bottom: 30px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px 20px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.9rem;
+        }
+
+        th {
+            background-color: var(--primary);
+            color: white;
+            font-weight: 600;
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        tr:hover { background-color: #f8f9fa; }
+
+        .text-right { text-align: right; }
+        
+        .badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+        .badge.bg-rojo { background: rgba(225, 37, 27, 0.1); color: var(--accent); }
+        .badge.bg-azul { background: rgba(1, 32, 148, 0.1); color: var(--primary); }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 992px) {
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.active-mobile { transform: translateX(0); }
+            .main-content { margin-left: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h2>EL COMPADRE</h2>
+            <p>Dashboard Gerencial CEDIS</p>
+        </div>
+        <div class="nav-menu">
+            <div class="nav-section-title">Nivel Ejecutivo</div>
+            <a href="#" class="nav-link active" onclick="showSection('resumen')">📊 Resumen C-Level</a>
+            
+            <div class="nav-section-title">Operaciones CEDIS</div>
+            <a href="#" class="nav-link" onclick="showSection('recepcion')">📦 Recepción (Nac/Int)</a>
+            <a href="#" class="nav-link" onclick="showSection('contenedores')">🚢 Contenedores</a>
+            <a href="#" class="nav-link" onclick="showSection('reclamos')">⚠️ Reclamos y Ajustes</a>
+            <a href="#" class="nav-link" onclick="showSection('etiquetado')">🏷️ Etiquetado</a>
+            <a href="#" class="nav-link" onclick="showSection('distribucion')">🚚 Distribución y Despacho</a>
+            <a href="#" class="nav-link" onclick="showSection('devoluciones')">🔄 Devoluciones</a>
+            <a href="#" class="nav-link" onclick="showSection('segunda')">👕 Segunda D'S</a>
+            
+            <div class="nav-section-title">Fiscalización</div>
+            <a href="#" class="nav-link" onclick="showSection('auditoria-tiendas')">🔍 Auditoría y Errores</a>
+            <a href="#" class="nav-link" onclick="showSection('auditoria-mayoreo')">🏬 Auditoría Mayoreo</a>
+        </div>
+    </nav>
+
+    <main class="main-content" id="mainContent">
+        
+        <header class="top-header">
+            <button class="menu-toggle" onclick="toggleMenu()">
+                ☰ <h1>Informe de Producción</h1>
+            </button>
+            <div class="header-info">
+                <span class="badge-gerencia">VISTA GERENCIAL 2026</span>
+                <span style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 600;">Mes de Análisis: ABRIL</span>
+            </div>
+        </header>
+
+        <section id="resumen" class="section-container active">
+            <h2 class="section-title">Resumen Ejecutivo</h2>
+            <p class="section-subtitle">Métricas críticas de impacto financiero y operativo.</p>
+            
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-title">Cumplimiento Global (Producción)</div>
+                    <div class="kpi-value" id="kpi-resumen-prod">--%</div>
+                    <div class="kpi-trend trend-up">Frente a meta corporativa</div>
+                </div>
+                <div class="kpi-card rojo">
+                    <div class="kpi-title">Impacto Financiero (Ajustes + Reclamos)</div>
+                    <div class="kpi-value" id="kpi-resumen-perdida">$--</div>
+                    <div class="kpi-trend trend-down">Capital en riesgo o ajustado</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-title">Cobertura Auditoría (Meta 15%)</div>
+                    <div class="kpi-value" id="kpi-resumen-auditoria">--%</div>
+                    <div class="kpi-trend trend-up">Auditado vs Facturado Total</div>
+                </div>
+                <div class="kpi-card verde">
+                    <div class="kpi-title">Eficiencia de Despacho</div>
+                    <div class="kpi-value" id="kpi-resumen-despacho">--%</div>
+                    <div class="kpi-trend trend-up">Enviado vs Venta Real</div>
+                </div>
+            </div>
+
+            <div class="charts-grid full">
+                <div class="chart-box">
+                    <div class="chart-header">Evolución de Productividad y Costos (Últimos 3 meses)</div>
+                    <canvas id="chart-resumen-historico" height="80"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <section id="recepcion" class="section-container">
+            <h2 class="section-title">Recepción de Mercadería</h2>
+            <p class="section-subtitle">Volumen de ingreso e impacto de costos.</p>
+
+            <div class="charts-grid">
+                <div class="chart-box">
+                    <div class="chart-header">Comparativo Anual (YoY): 2025 vs 2026</div>
+                    <canvas id="chart-rec-yoy"></canvas>
+                </div>
+                <div class="chart-box">
+                    <div class="chart-header">Distribución de Costo por Compañía (%)</div>
+                    <canvas id="chart-rec-costo"></canvas>
+                </div>
+            </div>
+            
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Origen</th>
+                            <th>Proveedor</th>
+                            <th class="text-right">Unidades Ingresadas</th>
+                            <th class="text-right">% Costo de Importación</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-recepcion-proveedores">
+                        </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="auditoria-tiendas" class="section-container">
+            <h2 class="section-title">Auditoría y Errores (Tiendas/CEDIS)</h2>
+            <p class="section-subtitle">Análisis de cuello de botella: Facturado vs Auditado y Tasa de Error.</p>
+
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-title">Total Facturado (Bultos)</div>
+                    <div class="kpi-value" id="kpi-auditoria-facturado">--</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-title">Total Auditado (Bultos)</div>
+                    <div class="kpi-value" id="kpi-auditoria-auditado">--</div>
+                </div>
+                <div class="kpi-card rojo">
+                    <div class="kpi-title">Total Unidades Error</div>
+                    <div class="kpi-value" id="kpi-auditoria-error">--</div>
+                </div>
+            </div>
+
+            <div class="charts-grid full">
+                <div class="chart-box">
+                    <div class="chart-header">Matriz de Fiscalización: Facturado vs Auditado por División</div>
+                    <canvas id="chart-auditoria-embudo" height="100"></canvas>
+                </div>
+            </div>
+
+            <div class="charts-grid">
+                <div class="chart-box">
+                    <div class="chart-header">Tipos de Error (Control y Auditoría)</div>
+                    <canvas id="chart-auditoria-tipos"></canvas>
+                </div>
+                <div class="chart-box">
+                    <div class="chart-header">Top 5 Facturadores con Errores</div>
+                    <div class="table-container" style="box-shadow: none; margin: 0;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Facturador</th>
+                                    <th class="text-right">Bultos</th>
+                                    <th class="text-right">Unid. Error</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-auditoria-facturadores">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="auditoria-mayoreo" class="section-container">
+            <h2 class="section-title">Auditoría Mayoreo (In-House)</h2>
+            <p class="section-subtitle">Fiscalización de cajeros y flujo de ventas en sala Mayoreo.</p>
+
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-title">Tickets Auditados</div>
+                    <div class="kpi-value" id="kpi-mayoreo-tickets">--</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-title">Unidades Revisadas</div>
+                    <div class="kpi-value" id="kpi-mayoreo-unidades">--</div>
+                </div>
+                <div class="kpi-card verde">
+                    <div class="kpi-title">Total Lempiras Auditado</div>
+                    <div class="kpi-value" id="kpi-mayoreo-lps">L --</div>
+                </div>
+            </div>
+
+            <div class="charts-grid">
+                <div class="chart-box">
+                    <div class="chart-header">Rendimiento por Cajero (Lempiras)</div>
+                    <canvas id="chart-mayoreo-cajeros"></canvas>
+                </div>
+                <div class="chart-box">
+                    <div class="chart-header">Distribución de Auditoría por Auditor</div>
+                    <canvas id="chart-mayoreo-auditores"></canvas>
+                </div>
+            </div>
+            
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Código Tienda</th>
+                            <th>Auditor</th>
+                            <th>Nombre Cajero</th>
+                            <th class="text-right">Cant. Producto</th>
+                            <th class="text-right">Pago Validado</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-mayoreo-detalle">
+                        </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="segunda" class="section-container">
+            <h2 class="section-title">Producción Segunda D'S</h2>
+            <p class="section-subtitle">Operación integral (Segunda, Digitación y Costura).</p>
+
+            <div class="charts-grid">
+                <div class="chart-box">
+                    <div class="chart-header">Comparativo Anual (YoY): 2025 vs 2026</div>
+                    <canvas id="chart-segunda-yoy"></canvas>
+                </div>
+                <div class="chart-box">
+                    <div class="chart-header">Desglose Operativo Mensual</div>
+                    <canvas id="chart-segunda-operacion"></canvas>
+                </div>
+            </div>
+        </section>
+
+        </main>
+
+    <script>
+        // Función para cambiar de sección en el menú
+        function showSection(sectionId) {
+            // Ocultar todas las secciones
+            document.querySelectorAll('.section-container').forEach(section => {
+                section.classList.remove('active');
+            });
+            // Quitar clase active del menú
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+
+            // Activar la sección seleccionada
+            document.getElementById(sectionId).classList.add('active');
+            event.currentTarget.classList.add('active');
+
+            // Si estamos en móvil, cerrar el menú automáticamente al hacer clic
+            if(window.innerWidth <= 992) {
+                toggleMenu();
+            }
+        }
+
+        // Función para el menú Hamburguesa
+        function toggleMenu() {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('mainContent');
+            
+            if (window.innerWidth > 992) {
+                // En escritorio
+                sidebar.classList.toggle('collapsed');
+                mainContent.classList.toggle('expanded');
+            } else {
+                // En móviles
+                sidebar.classList.toggle('active-mobile');
+            }
+        }
+    </script>
+</body>
+</html>
