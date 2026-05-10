@@ -1,269 +1,154 @@
-// ==========================================================
-// CONFIGURACIÓN GLOBAL - MANUAL DE MARCA 2025 Y GERENCIA
-// ==========================================================
-
-// Registrar el plugin de DataLabels
 Chart.register(ChartDataLabels);
 
-// Paleta Oficial El Compadre 2025
-const PALETA = {
-    azul: '#012094',
-    rojo: '#E1251B',
-    verde: '#27ae60',
-    amarillo: '#f39c12',
-    gris: '#dfe6e9'
-};
+const COLORS = { azul: '#012094', rojo: '#E1251B', verde: '#27ae60', gris: '#dfe6e9' };
 
-// Configuraciones por defecto para TODOS los gráficos (Gerencia-Proof)
-Chart.defaults.font.family = "'Montserrat', sans-serif";
-Chart.defaults.color = '#2d3436';
-
-const commonOptions = {
+// Configuración Base de Gráficos (Gerencia)
+const baseOptions = {
     responsive: true,
     maintainAspectRatio: false,
-    scales: {
-        x: { 
-            grid: { display: false } // Sin cuadrícula en X
-        },
-        y: { 
-            grid: { display: false }, // Sin cuadrícula en Y
-            beginAtZero: true,
-            ticks: {
-                callback: function(value) {
-                    return value.toLocaleString('en-US'); // Separador de miles
-                }
-            }
-        }
-    },
+    scales: { x: { grid: { display: false } }, y: { grid: { display: false }, ticks: { callback: v => v.toLocaleString() } } },
     plugins: {
-        legend: { position: 'top' },
         datalabels: {
-            color: '#ffffff',
-            font: { weight: 'bold', size: 10 },
-            formatter: (value) => {
-                if (value === 0) return ''; // No mostrar ceros
-                return value.toLocaleString('en-US'); 
-            },
-            anchor: 'end',
-            align: 'start',
-            offset: -20,
-            borderRadius: 4,
-            backgroundColor: 'rgba(0,0,0,0.6)'
+            anchor: 'end', align: 'top', font: { weight: 'bold' },
+            formatter: v => v.toLocaleString()
         }
     }
 };
 
-// ==========================================================
-// LÓGICA DE CARGA DE DATOS (PAPAPARSE)
-// ==========================================================
-
-// Función para cargar un CSV y convertirlo a JSON
-function cargarCSV(url) {
-    return new Promise((resolve, reject) => {
-        Papa.parse(url, {
-            download: true,
-            header: true,
-            dynamicTyping: true,
-            skipEmptyLines: true,
-            complete: function(results) {
-                resolve(results.data);
-            },
-            error: function(error) {
-                console.error(`Error cargando ${url}:`, error);
-                resolve([]); // Retornar array vacío si falla para no romper la web
-            }
+async function cargarCSV(file) {
+    return new Promise((resolve) => {
+        Papa.parse(`Datos/${file}`, {
+            download: true, header: true, dynamicTyping: true, skipEmptyLines: true,
+            complete: results => resolve(results.data),
+            error: () => resolve([])
         });
     });
 }
 
-// ==========================================================
-// INICIALIZACIÓN Y PROCESAMIENTO
-// ==========================================================
+async function init() {
+    const data = {};
+    const files = [
+        '0-seguimiento_objetivos.csv', '1-recepcion_nacional.csv', '2-recepcion_internacional.csv',
+        '9-distribucion.csv', '10-envios.csv', '11-ventas.csv', '12-auditoria mercaderia_tiendas.csv',
+        '13-auditoria mercaderia_mayoreo.csv', '14-auditoria mercaderia_errores.csv',
+        '19-digitacion_segunda.csv', '20-segunda_produccion.csv'
+    ];
 
-// ==========================================================
-// CARGA DINÁMICA DE TODOS LOS ARCHIVOS DESDE "Datos/"
-// ==========================================================
+    for (const f of files) { data[f] = await cargarCSV(f); }
 
-async function initDashboard() {
-    // Cargamos el arsenal completo de CSVs respetando los nombres exactos
-    const [
-        objDiarios, recNacional, recInternacional, tDescarga, reclamos, ajustes,
-        etiquetado, controlProd, controlErr, distribucion, envios, ventas,
-        audTiendas, audMayoreo, audErrores, devAEC, devDS,
-        invCedi, invTienda, digSegunda, segProd, segProv
-    ] = await Promise.all([
-        cargarCSV('Datos/0-seguimiento_objetivos.csv'),
-        cargarCSV('Datos/1-recepcion_nacional.csv'),
-        cargarCSV('Datos/2-recepcion_internacional.csv'),
-        cargarCSV('Datos/3-tiempo_descarga.csv'),
-        cargarCSV('Datos/4-reclamos.csv'),
-        cargarCSV('Datos/5-ajustes.csv'),
-        cargarCSV('Datos/6-etiquetado.csv'),
-        cargarCSV('Datos/7-control y etiquetado_produccion.csv'),
-        cargarCSV('Datos/8-control y etiquetado_errores.csv'),
-        cargarCSV('Datos/9-distribucion.csv'),
-        cargarCSV('Datos/10-envios.csv'),
-        cargarCSV('Datos/11-ventas.csv'),
-        cargarCSV('Datos/12-auditoria mercaderia_tiendas.csv'),
-        cargarCSV('Datos/13-auditoria mercaderia_mayoreo.csv'),
-        cargarCSV('Datos/14-auditoria mercaderia_errores.csv'),
-        cargarCSV('Datos/15-devoluciones_aec.csv'),
-        cargarCSV('Datos/16-devoluciones_ds.csv'),
-        cargarCSV('Datos/17-administracion de inventario cedi.csv'),
-        cargarCSV('Datos/18-administracion de inventario tienda.csv'),
-        cargarCSV('Datos/19-digitacion_segunda.csv'),
-        cargarCSV('Datos/20-segunda_produccion.csv'),
-        cargarCSV('Datos/21-segunda_proveedor.csv')
-    ]);
-
-    // Imprimir en consola para confirmar que cargaron todos
-    console.log("Datos cargados correctamente. Iniciando renderizado...");
-
-    // Ejecutar renders pasando los datos correspondientes a cada sección
-    renderCLevel(objDiarios);
-    renderRecepcion(recNacional, recInternacional); // Actualizado para recibir ambos
-    renderAuditoria(distribucion, digSegunda, audTiendas, controlErr, audErrores);
-    renderMayoreo(audMayoreo);
-    
-    // (Aquí iremos agregando las demás funciones render como renderEtiquetado, renderDevoluciones, etc.)
+    renderRecepcion(data['1-recepcion_nacional.csv'], data['2-recepcion_internacional.csv']);
+    renderDistribucion(data['9-distribucion.csv']);
+    renderDespacho(data['10-envios.csv'], data['11-ventas.csv']);
+    renderAuditoria(data['9-distribucion.csv'], data['19-digitacion_segunda.csv'], data['12-auditoria mercaderia_tiendas.csv']);
+    renderMayoreo(data['13-auditoria mercaderia_mayoreo.csv']);
+    renderSegunda(data['20-segunda_produccion.csv']);
 }
 
-// ==========================================================
-// FUNCIONES DE RENDERIZADO POR SECCIÓN
-// ==========================================================
-
-function renderCLevel(dataObjetivos) {
-    // Aquí buscas la fila de 'Producción' o el consolidado en tu CSV 0
-    // Ejemplo ilustrativo si existiera una fila resumen:
-    // const metaGlobal = dataObjetivos.find(row => row['Área'] === 'Global');
+// 1. RECEPCIÓN (YoY y % Costo)
+function renderRecepcion(nac, inter) {
+    const sumNac = nac.reduce((a, b) => a + (b['Suma de Cantidad'] || 0), 0);
+    const sumInt = inter.reduce((a, b) => a + (b['Suma de Cantidad'] || 0), 0);
     
-    // Asignación DOM (Ejemplo estático, reemplazar con cálculos reales)
-    document.getElementById('kpi-resumen-prod').textContent = '101.4%';
-    document.getElementById('kpi-resumen-perdida').textContent = '$ 6,817.92'; // Formato Moneda
-    
-    // Gráfico YoY Resumen
-    const ctx = document.getElementById('chart-resumen-historico').getContext('2d');
-    new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: ['Feb', 'Mar', 'Abr'],
-            datasets: [{
-                label: 'Crecimiento de Productividad (%)',
-                data: [98, 101.4, 105],
-                borderColor: PALETA.azul,
-                backgroundColor: 'transparent',
-                tension: 0.4,
-                pointBackgroundColor: PALETA.rojo
-            }]
-        },
-        options: {
-            ...commonOptions,
-            plugins: { ...commonOptions.plugins, datalabels: { display: true, color: PALETA.azul, align: 'top', anchor: 'end', backgroundColor: 'transparent' } }
-        }
-    });
-}
+    // Comparativo YoY (Agrupando por AÑO)
+    const yoy = nac.reduce((acc, row) => {
+        acc[row.AÑO] = (acc[row.AÑO] || 0) + (row['Suma de Cantidad'] || 0);
+        return acc;
+    }, {});
 
-function renderRecepcion(dataNacional) {
-    // Gráfico de Distribución de Costo (%) - Solicitud de Gerencia
-    const ctxCosto = document.getElementById('chart-rec-costo').getContext('2d');
-    new Chart(ctxCosto, {
-        type: 'doughnut',
-        data: {
-            labels: ['AEC', 'Danilos Store'],
-            datasets: [{
-                data: [82.58, 17.42], // Estos datos se calcularían sumando la columna 'Suma de CostoImportacionTotal' agrupada por Compañía
-                backgroundColor: [PALETA.azul, PALETA.rojo],
-                borderWidth: 2
-            }]
-        },
-        options: {
-            responsive: true, maintainAspectRatio: false,
-            plugins: {
-                legend: { position: 'bottom' },
-                datalabels: {
-                    formatter: (value) => value + '%', // Formato de porcentaje estricto
-                    color: '#fff',
-                    font: { size: 14, weight: 'bold' }
-                }
-            }
-        }
-    });
-}
-
-function renderAuditoria(distribucion, digSegunda, audTiendas, errControl, errAuditoria) {
-    // 1. CÁLCULO META 15% (El "Dato de Oro")
-    // Sumamos bultos de Distribucion y Digitación Segunda
-    let totalBultosFacturados = 0;
-    distribucion.forEach(row => totalBultosFacturados += Number(row[' BULTOS'] || 0));
-    digSegunda.forEach(row => totalBultosFacturados += Number(row[' BULTOS'] || 0));
-    
-    let totalBultosAuditados = 0;
-    audTiendas.forEach(row => totalBultosAuditados += Number(row['BULTOS'] || 0));
-
-    const metaRequerida = totalBultosFacturados * 0.15;
-    const porcentajeLogrado = (totalBultosAuditados / metaRequerida) * 100;
-
-    document.getElementById('kpi-auditoria-facturado').textContent = totalBultosFacturados.toLocaleString('en-US');
-    document.getElementById('kpi-auditoria-auditado').textContent = totalBultosAuditados.toLocaleString('en-US');
-    document.getElementById('kpi-resumen-auditoria').textContent = (porcentajeLogrado || 0).toFixed(1) + '%';
-
-    // 2. GRÁFICO EMBUDO: Facturado vs Auditado por División
-    // Agrupamos datos por división simulando el cruce
-    const divisiones = ['Belleza', 'Ropa', 'Hogar', 'Calzado', 'Accesorios'];
-    const facturadoDiv = [1500, 1200, 800, 600, 400]; // Valores calculados del cruce
-    const auditadoDiv = [300, 180, 50, 120, 20];      // Valores calculados del cruce
-
-    const ctxEmbudo = document.getElementById('chart-auditoria-embudo').getContext('2d');
-    new Chart(ctxEmbudo, {
+    new Chart(document.getElementById('chart-rec-yoy'), {
         type: 'bar',
         data: {
-            labels: divisiones,
-            datasets: [
-                {
-                    label: 'Total Facturado (Unidades)',
-                    data: facturadoDiv,
-                    backgroundColor: PALETA.azul,
-                    borderRadius: 4
-                },
-                {
-                    label: 'Total Auditado (Unidades)',
-                    data: auditadoDiv,
-                    backgroundColor: PALETA.verde, // Verde para resaltar lo auditado
-                    borderRadius: 4
-                }
-            ]
+            labels: Object.keys(yoy),
+            datasets: [{ label: 'Unidades Recibidas YoY', data: Object.values(yoy), backgroundColor: [COLORS.gris, COLORS.azul] }]
         },
-        options: commonOptions
+        options: baseOptions
     });
-
-    // 3. TABLA TOP FACTURADORES (Unificando archivos 8 y 14)
-    // Lógica para agrupar errores por facturador y renderizar en el tbody '#tabla-auditoria-facturadores'
-    // (Omitido por brevedad, pero usarías un reduce() en JS para agrupar)
 }
 
-function renderMayoreo(audMayoreo) {
-    // Sección exclusiva in-house
-    let totalLempiras = 0;
-    let totalUnidades = 0;
-    
-    // Limpieza de datos (Quitar 'L' y comas para sumar)
-    audMayoreo.forEach(row => {
-        let pagoStr = row['Suma de PAGO'] || '0';
-        let pagoNum = parseFloat(pagoStr.toString().replace(/L/g, '').replace(/,/g, ''));
-        totalLempiras += isNaN(pagoNum) ? 0 : pagoNum;
-        totalUnidades += Number(row['Suma de CANTIDAD PRODUCTO'] || 0);
-    });
+// 2. DISTRIBUCIÓN (Solo Transferencias)
+function renderDistribucion(data) {
+    const comps = data.reduce((acc, row) => {
+        const c = row['Tipo Transferencia'] || 'Otros';
+        acc[c] = (acc[c] || 0) + (row[' UNIDADES.1'] || 0);
+        return acc;
+    }, {});
 
-    document.getElementById('kpi-mayoreo-tickets').textContent = audMayoreo.length.toLocaleString('en-US');
-    document.getElementById('kpi-mayoreo-unidades').textContent = totalUnidades.toLocaleString('en-US');
-    document.getElementById('kpi-mayoreo-lps').textContent = 'L ' + totalLempiras.toLocaleString('en-US', {minimumFractionDigits: 2});
+    new Chart(document.getElementById('chart-dist-comp'), {
+        type: 'doughnut',
+        data: {
+            labels: Object.keys(comps),
+            datasets: [{ data: Object.values(comps), backgroundColor: [COLORS.azul, COLORS.rojo] }]
+        },
+        options: { ...baseOptions, plugins: { datalabels: { formatter: v => v.toLocaleString() } } }
+    });
 }
 
-// Arrancar el motor cuando el HTML esté listo
-document.addEventListener('DOMContentLoaded', () => {
-    // Necesitamos cargar PapaParse en el HTML para que esto funcione. 
-    // Asegúrate de tener esto en el <head> de tu index.html:
-    // <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+// 3. DESPACHO VS VENTAS (File 10 vs 11)
+function renderDespacho(envios, ventas) {
+    const totalEnvios = envios.reduce((a, b) => a + (b.UNIDADES || 0), 0);
+    const totalVentas = ventas.reduce((a, b) => a + (b.UNIDADES || 0), 0);
+
+    new Chart(document.getElementById('chart-despacho-ventas'), {
+        type: 'bar',
+        data: {
+            labels: ['Enviado (Logística)', 'Venta (Tiendas)'],
+            datasets: [{ label: 'Unidades', data: [totalEnvios, totalVentas], backgroundColor: [COLORS.azul, COLORS.verde] }]
+        },
+        options: baseOptions
+    });
+}
+
+// 4. AUDITORÍA (Regla del 15%)
+function renderAuditoria(dist, dig, aud) {
+    let facturado = dist.reduce((a, b) => a + (b[' UNIDADES.1'] || 0), 0);
+    facturado += dig.reduce((a, b) => a + (b[' UNIDADES.1'] || 0), 0);
     
-    initDashboard();
-});
+    const auditado = aud.reduce((a, b) => a + (b.UNIDADES || 0), 0);
+    const cobertura = (auditado / facturado) * 100;
+
+    document.getElementById('aud-cobertura').textContent = cobertura.toFixed(2) + '%';
+
+    new Chart(document.getElementById('chart-aud-embudo'), {
+        type: 'bar',
+        data: {
+            labels: ['Total Facturado', 'Meta Auditoría (15%)', 'Real Auditado'],
+            datasets: [{ 
+                data: [facturado, facturado * 0.15, auditado], 
+                backgroundColor: [COLORS.gris, COLORS.rojo, COLORS.verde] 
+            }]
+        },
+        options: baseOptions
+    });
+}
+
+// 5. MAYOREO
+function renderMayoreo(data) {
+    const totalLps = data.reduce((a, b) => {
+        const val = parseFloat(b['Suma de PAGO']?.toString().replace(/L|,/g, '') || 0);
+        return a + val;
+    }, 0);
+
+    document.getElementById('kpis-mayoreo').innerHTML = `
+        <div class="card"><div>Total Lempiras</div><div class="kpi-val">L ${totalLps.toLocaleString()}</div></div>
+        <div class="card"><div>Unidades Mayoreo</div><div class="kpi-val">${data.reduce((a,b)=>a+(b['Suma de CANTIDAD PRODUCTO']||0),0).toLocaleString()}</div></div>
+    `;
+}
+
+// 6. SEGUNDA YoY
+function renderSegunda(data) {
+    const yoy = data.reduce((acc, row) => {
+        acc[row.AÑO] = (acc[row.AÑO] || 0) + (row.UNIDADES || 0);
+        return acc;
+    }, {});
+
+    new Chart(document.getElementById('chart-segunda-yoy'), {
+        type: 'bar',
+        data: {
+            labels: Object.keys(yoy),
+            datasets: [{ label: 'Producción Total Segunda YoY', data: Object.values(yoy), backgroundColor: [COLORS.gris, COLORS.azul] }]
+        },
+        options: baseOptions
+    });
+}
+
+init();
