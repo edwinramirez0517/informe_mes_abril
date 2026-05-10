@@ -80,24 +80,28 @@ function cargarCSV(url) {
 // INICIALIZACIÓN Y PROCESAMIENTO
 // ==========================================================
 
+// ==========================================================
+// CARGA DINÁMICA DESDE LA CARPETA "Datos"
+// ==========================================================
+
 async function initDashboard() {
-    // 1. Cargar todos los archivos necesarios desde la carpeta /data
-    // Asegúrate de que los nombres coincidan exactamente en tu repo de GitHub
+    // Cargamos todos los archivos desde la nueva ruta "Datos/"
+    // Asegúrate de que el nombre de la carpeta en GitHub sea exactamente igual (Datos)
     const [
         objDiarios, recNacional, distribucion, digSegunda, 
         auditoriaTiendas, auditoriaMayoreo, erroresControl, erroresAuditoria
     ] = await Promise.all([
-        cargarCSV('data/0-seguimiento_objetivos.csv'),
-        cargarCSV('data/1-recepcion_nacional.csv'),
-        cargarCSV('data/9-distribucion.csv'),
-        cargarCSV('data/19-digitacion_segunda.csv'),
-        cargarCSV('data/12-auditoria_mercaderia_tiendas.csv'),
-        cargarCSV('data/13-auditoria_mercaderia_mayoreo.csv'),
-        cargarCSV('data/8-control_y_etiquetado_errores.csv'),
-        cargarCSV('data/14-auditoria_mercaderia_errores.csv')
+        cargarCSV('Datos/0-seguimiento_objetivos.csv'),
+        cargarCSV('Datos/1-recepcion_nacional.csv'),
+        cargarCSV('Datos/9-distribucion.csv'),
+        cargarCSV('Datos/19-digitacion_segunda.csv'),
+        cargarCSV('Datos/12-auditoria_mercaderia_tiendas.csv'),
+        cargarCSV('Datos/13-auditoria_mercaderia_mayoreo.csv'),
+        cargarCSV('Datos/8-control_y_etiquetado_errores.csv'),
+        cargarCSV('Datos/14-auditoria_mercaderia_errores.csv')
     ]);
 
-    // 2. Ejecutar renders por sección
+    // Ejecutar renders con la información procesada
     renderCLevel(objDiarios);
     renderRecepcion(recNacional);
     renderAuditoria(distribucion, digSegunda, auditoriaTiendas, erroresControl, erroresAuditoria);
