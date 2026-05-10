@@ -81,31 +81,51 @@ function cargarCSV(url) {
 // ==========================================================
 
 // ==========================================================
-// CARGA DINÁMICA DESDE LA CARPETA "Datos"
+// CARGA DINÁMICA DE TODOS LOS ARCHIVOS DESDE "Datos/"
 // ==========================================================
 
 async function initDashboard() {
-    // Cargamos todos los archivos desde la nueva ruta "Datos/"
-    // Asegúrate de que el nombre de la carpeta en GitHub sea exactamente igual (Datos)
+    // Cargamos el arsenal completo de CSVs respetando los nombres exactos
     const [
-        objDiarios, recNacional, distribucion, digSegunda, 
-        auditoriaTiendas, auditoriaMayoreo, erroresControl, erroresAuditoria
+        objDiarios, recNacional, recInternacional, tDescarga, reclamos, ajustes,
+        etiquetado, controlProd, controlErr, distribucion, envios, ventas,
+        audTiendas, audMayoreo, audErrores, devAEC, devDS,
+        invCedi, invTienda, digSegunda, segProd, segProv
     ] = await Promise.all([
         cargarCSV('Datos/0-seguimiento_objetivos.csv'),
         cargarCSV('Datos/1-recepcion_nacional.csv'),
+        cargarCSV('Datos/2-recepcion_internacional.csv'),
+        cargarCSV('Datos/3-tiempo_descarga.csv'),
+        cargarCSV('Datos/4-reclamos.csv'),
+        cargarCSV('Datos/5-ajustes.csv'),
+        cargarCSV('Datos/6-etiquetado.csv'),
+        cargarCSV('Datos/7-control y etiquetado_produccion.csv'),
+        cargarCSV('Datos/8-control y etiquetado_errores.csv'),
         cargarCSV('Datos/9-distribucion.csv'),
+        cargarCSV('Datos/10-envios.csv'),
+        cargarCSV('Datos/11-ventas.csv'),
+        cargarCSV('Datos/12-auditoria mercaderia_tiendas.csv'),
+        cargarCSV('Datos/13-auditoria mercaderia_mayoreo.csv'),
+        cargarCSV('Datos/14-auditoria mercaderia_errores.csv'),
+        cargarCSV('Datos/15-devoluciones_aec.csv'),
+        cargarCSV('Datos/16-devoluciones_ds.csv'),
+        cargarCSV('Datos/17-administracion de inventario cedi.csv'),
+        cargarCSV('Datos/18-administracion de inventario tienda.csv'),
         cargarCSV('Datos/19-digitacion_segunda.csv'),
-        cargarCSV('Datos/12-auditoria_mercaderia_tiendas.csv'),
-        cargarCSV('Datos/13-auditoria_mercaderia_mayoreo.csv'),
-        cargarCSV('Datos/8-control_y_etiquetado_errores.csv'),
-        cargarCSV('Datos/14-auditoria_mercaderia_errores.csv')
+        cargarCSV('Datos/20-segunda_produccion.csv'),
+        cargarCSV('Datos/21-segunda_proveedor.csv')
     ]);
 
-    // Ejecutar renders con la información procesada
+    // Imprimir en consola para confirmar que cargaron todos
+    console.log("Datos cargados correctamente. Iniciando renderizado...");
+
+    // Ejecutar renders pasando los datos correspondientes a cada sección
     renderCLevel(objDiarios);
-    renderRecepcion(recNacional);
-    renderAuditoria(distribucion, digSegunda, auditoriaTiendas, erroresControl, erroresAuditoria);
-    renderMayoreo(auditoriaMayoreo);
+    renderRecepcion(recNacional, recInternacional); // Actualizado para recibir ambos
+    renderAuditoria(distribucion, digSegunda, audTiendas, controlErr, audErrores);
+    renderMayoreo(audMayoreo);
+    
+    // (Aquí iremos agregando las demás funciones render como renderEtiquetado, renderDevoluciones, etc.)
 }
 
 // ==========================================================
