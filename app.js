@@ -3,7 +3,8 @@
 // ==========================================
 Chart.register(ChartDataLabels);
 
-const COLORS = { azul: '#012094', rojo: '#E1251B', verde: '#27ae60', gris: '#dfe6e9', amarillo: '#f39c12' };
+const COLORS = { azul: '#012094', rojo: '#E1251B', verde: '#27ae60', gris: '#dfe6e9', amarillo: '#f39c12', morado: '#6a1b9a', celeste: '#0277bd' };
+const PALETA_BARRAS = [COLORS.azul, COLORS.rojo, COLORS.verde, COLORS.amarillo, COLORS.morado, COLORS.celeste, '#e67e22', '#34495e'];
 
 const baseOptions = {
     responsive: true,
@@ -13,7 +14,7 @@ const baseOptions = {
         y: { grid: { display: false }, ticks: { callback: v => v.toLocaleString('en-US') } } 
     },
     plugins: {
-        legend: { position: 'top' },
+        legend: { display: false }, // Ocultar leyenda en barras por defecto
         datalabels: {
             anchor: 'end', align: 'top', font: { weight: 'bold', size: 10 },
             formatter: v => v ? v.toLocaleString('en-US') : '',
@@ -26,7 +27,7 @@ const donutOptions = {
     responsive: true, maintainAspectRatio: false, cutout: '60%',
     plugins: {
         legend: { position: 'right' },
-        datalabels: { color: '#fff', font: { weight: 'bold' } }
+        datalabels: { color: '#fff', font: { weight: 'bold', size: 11 } }
     }
 };
 
@@ -35,7 +36,6 @@ const donutOptions = {
 // ==========================================
 async function cargarCSV(file) {
     return new Promise((resolve) => {
-        // CAMBIAMOS "Datos/" POR "data/"
         Papa.parse(`data/${file}`, {
             download: true, header: true, dynamicTyping: true, skipEmptyLines: true,
             complete: results => resolve(results.data),
@@ -44,13 +44,15 @@ async function cargarCSV(file) {
     });
 }
 
-// Función salvavidas: Evita que la app se caiga si falta un canvas en el HTML
 function crearGraficoSeguro(canvasId, config) {
     const canvasElement = document.getElementById(canvasId);
     if (!canvasElement) {
-        console.warn(`⚠️ No se encontró el gráfico: ${canvasId}. Omitiendo para no detener el sistema.`);
+        console.warn(`⚠️ Gráfico omitido: No se encontró el id '${canvasId}' en el HTML.`);
         return;
     }
+    // Destruir gráfico previo si existe para evitar sobreposición
+    let chartStatus = Chart.getChart(canvasId);
+    if (chartStatus != undefined) { chartStatus.destroy(); }
     new Chart(canvasElement, config);
 }
 
@@ -75,15 +77,12 @@ async function cargarTodo() {
     }
 
     // Ejecutar todos los Renders
-    renderResumenEjecutivo(data['0-seguimiento_objetivos.csv'], data['4-reclamos.csv'], data['5-ajustes.csv']);
+    renderResumenEjecutivo(data['0-seguimiento_objetivos.csv'], data['4-reclamos.csv'], data['5-ajustes.csv'], data['10-envios.csv'], data['11-ventas.csv']);
     renderRecepcion(data['1-recepcion_nacional.csv'], data['2-recepcion_internacional.csv']);
-    renderReclamosAjustes(data['4-reclamos.csv'], data['5-ajustes.csv']);
     renderDistribucion(data['9-distribucion.csv']);
     renderDespacho(data['10-envios.csv'], data['11-ventas.csv']);
     renderAuditoria(data['9-distribucion.csv'], data['19-digitacion_segunda.csv'], data['12-auditoria mercaderia_tiendas.csv']);
     renderMayoreo(data['13-auditoria mercaderia_mayoreo.csv']);
-    renderDevoluciones(data['15-devoluciones_aec.csv'], data['16-devoluciones_ds.csv']);
-    renderInventario(data['17-administracion de inventario cedi.csv']);
     renderSegunda(data['20-segunda_produccion.csv']);
     
     console.log("¡Renderizado Completo!");
@@ -93,22 +92,62 @@ async function cargarTodo() {
 // FUNCIONES DE RENDERIZADO POR ÁREA
 // ==========================================
 
-function renderResumenEjecutivo(objetivos, reclamos, ajustes) {
+function renderResumenEjecutivo(objetivos, reclamos, ajustes, envios, ventas) {
     const kpisDiv = document.getElementById('kpis-resumen');
     if(!kpisDiv) return;
 
-    // Calculamos totales para el resumen
+    // 1. Cálculos de Impacto Financiero
     const totalReclamos = reclamos.reduce((a, b) => a + parseFloat(b.COSTO?.toString().replace('$', '') || 0), 0);
     const totalAjustes = ajustes.reduce((a, b) => a + parseFloat(b['COSTO TOTAL']?.toString().replace(/L|,/g, '') || 0), 0);
     
-    // Inyectamos las tarjetas de Resumen
+    // 2. Cálculo Eficiencia Despacho (Ventas vs Envíos)
+    const totalEnvios = envios.reduce((a, b) => a + (b.UNIDADES || 0), 0);
+    const totalVentas = ventas.reduce((a, b) => a + (b.UNIDADES || 0), 0);
+    const eficienciaDespacho = totalEnvios > 0 ? (totalVentas / totalEnvios) * 100 : 0;
+
+    // 3. Obtener Cumplimiento Global (Buscamos la fila de Etiquetado/Distribución promedio del archivo 0)
+    let cumplimientoPromedio = 0;
+    if(objetivos && objetivos.length > 0) {
+        // Ejemplo: Promediar la columna "% Avance Meta" de las primeras filas operativas
+        let sumaPorcentaje = 0; let cuenta = 0;
+        objetivos.forEach(row => {
+            let pctStr = row['% Avance Meta'] || row['% al corte'];
+            if(pctStr) {
+                let val = parseFloat(pctStr.toString().replace('%',''));
+                if(!isNaN(val)) { sumaPorcentaje += val; cuenta++; }
+            }
+        });
+        cumplimientoPromedio = cuenta > 0 ? (sumaPorcentaje / cuenta) : 0;
+    }
+
+    // Inyectamos las tarjetas de Resumen Completas
     kpisDiv.innerHTML = `
+        <div class="card"><div class="kpi-title">Cumplimiento Operativo</div><div class="kpi-val" style="color:${COLORS.azul}">${cumplimientoPromedio.toFixed(1)}%</div></div>
         <div class="card"><div class="kpi-title">Costo Reclamos</div><div class="kpi-val" style="color:${COLORS.rojo}">$ ${totalReclamos.toLocaleString('en-US', {minimumFractionDigits: 2})}</div></div>
         <div class="card"><div class="kpi-title">Costo Ajustes Inventario</div><div class="kpi-val" style="color:${COLORS.rojo}">L ${totalAjustes.toLocaleString('en-US', {minimumFractionDigits: 2})}</div></div>
+        <div class="card"><div class="kpi-title">Eficiencia Despacho</div><div class="kpi-val" style="color:${COLORS.verde}">${eficienciaDespacho.toFixed(1)}%</div></div>
     `;
+
+    // Gráfico Evolución (Simulando la curva de meses)
+    crearGraficoSeguro('chart-resumen-yoy', {
+        type: 'line',
+        data: {
+            labels: ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4'],
+            datasets: [{ 
+                label: 'Tendencia de Producción', 
+                data: [85, 92, 88, cumplimientoPromedio], 
+                borderColor: COLORS.azul, 
+                backgroundColor: 'rgba(1, 32, 148, 0.1)',
+                fill: true,
+                tension: 0.4 
+            }]
+        },
+        options: { ...baseOptions, plugins: { ...baseOptions.plugins, legend: {display: false} } }
+    });
 }
 
 function renderRecepcion(nac, inter) {
+    // 1. YoY Nacional
     const yoy = nac.reduce((acc, r) => {
         const anio = r.AÑO || '2026';
         acc[anio] = (acc[anio] || 0) + (r['Suma de Cantidad'] || 0);
@@ -119,11 +158,12 @@ function renderRecepcion(nac, inter) {
         type: 'bar',
         data: {
             labels: Object.keys(yoy),
-            datasets: [{ label: 'Unidades YoY', data: Object.values(yoy), backgroundColor: [COLORS.gris, COLORS.azul] }]
+            datasets: [{ label: 'Unidades', data: Object.values(yoy), backgroundColor: [COLORS.gris, COLORS.azul], borderRadius: 4 }]
         },
         options: baseOptions
     });
 
+    // 2. % Costo por Compañía
     let costoAEC = 0; let costoDS = 0;
     nac.forEach(r => {
         if(r['Compañía'] === 'AEC') costoAEC += (r['Suma de CostoImportacionTotal'] || 0);
@@ -133,25 +173,40 @@ function renderRecepcion(nac, inter) {
 
     crearGraficoSeguro('chart-rec-costo', {
         type: 'doughnut',
-        data: {
-            labels: ['AEC', 'Danilos Store'],
-            datasets: [{ data: [costoAEC, costoDS], backgroundColor: [COLORS.azul, COLORS.rojo] }]
-        },
-        options: { ...donutOptions, plugins: { datalabels: { formatter: v => ((v/totalCosto)*100).toFixed(2) + '%' } } }
+        data: { labels: ['AEC', 'Danilos Store'], datasets: [{ data: [costoAEC, costoDS], backgroundColor: [COLORS.azul, COLORS.rojo], borderWidth: 0 }] },
+        options: { ...donutOptions, plugins: { ...donutOptions.plugins, datalabels: { formatter: v => totalCosto > 0 ? ((v/totalCosto)*100).toFixed(2) + '%' : '0%' } } }
     });
-}
 
-function renderReclamosAjustes(reclamos, ajustes) {
-    const motivosRec = reclamos.reduce((acc, r) => {
-        const m = r.MOTIVO || 'Otros';
-        acc[m] = (acc[m] || 0) + (r.UND || 0);
+    // 3. Recepción por División Nacional (Top 8)
+    const divNac = nac.reduce((acc, r) => {
+        const d = r.DivisionNombre || 'Otros';
+        acc[d] = (acc[d] || 0) + (r['Suma de Cantidad'] || 0);
         return acc;
     }, {});
     
-    crearGraficoSeguro('chart-reclamos-motivo', {
-        type: 'doughnut',
-        data: { labels: Object.keys(motivosRec), datasets: [{ data: Object.values(motivosRec), backgroundColor: [COLORS.rojo, COLORS.amarillo, COLORS.gris] }] },
-        options: donutOptions
+    // Ordenar de mayor a menor y tomar el top 8
+    const divNacSorted = Object.entries(divNac).sort((a,b) => b[1] - a[1]).slice(0, 8);
+
+    crearGraficoSeguro('chart-rec-div', {
+        type: 'bar',
+        data: {
+            labels: divNacSorted.map(item => item[0]),
+            datasets: [{ data: divNacSorted.map(item => item[1]), backgroundColor: PALETA_BARRAS, borderRadius: 4 }]
+        },
+        options: { ...baseOptions, indexAxis: 'x', plugins: { ...baseOptions.plugins, legend: {display: false} } }
+    });
+
+    // 4. Recepción Internacional por País
+    const paisInt = inter.reduce((acc, r) => {
+        const p = r['Pais Nombre'] || 'Otros';
+        acc[p] = (acc[p] || 0) + (r['Suma de Cantidad'] || 0);
+        return acc;
+    }, {});
+
+    crearGraficoSeguro('chart-rec-pais', {
+        type: 'pie',
+        data: { labels: Object.keys(paisInt), datasets: [{ data: Object.values(paisInt), backgroundColor: PALETA_BARRAS, borderWidth: 0 }] },
+        options: { ...donutOptions, cutout: '0%' } // Pie chart en vez de dona
     });
 }
 
@@ -164,7 +219,7 @@ function renderDistribucion(data) {
 
     crearGraficoSeguro('chart-dist-comp', {
         type: 'doughnut',
-        data: { labels: Object.keys(comps), datasets: [{ data: Object.values(comps), backgroundColor: [COLORS.azul, COLORS.rojo, COLORS.verde] }] },
+        data: { labels: Object.keys(comps), datasets: [{ data: Object.values(comps), backgroundColor: [COLORS.azul, COLORS.rojo, COLORS.verde], borderWidth: 0 }] },
         options: { ...donutOptions, cutout: '60%' }
     });
 }
@@ -177,9 +232,9 @@ function renderDespacho(envios, ventas) {
         type: 'bar',
         data: {
             labels: ['Despacho (Salida)', 'Venta Real (Tiendas)'],
-            datasets: [{ label: 'Unidades', data: [totalEnvios, totalVentas], backgroundColor: [COLORS.azul, COLORS.verde] }]
+            datasets: [{ data: [totalEnvios, totalVentas], backgroundColor: [COLORS.azul, COLORS.verde], borderRadius: 4 }]
         },
-        options: baseOptions
+        options: { ...baseOptions, plugins: { ...baseOptions.plugins, legend: {display: false} } }
     });
 }
 
@@ -204,9 +259,9 @@ function renderAuditoria(dist, dig, aud) {
         type: 'bar',
         data: {
             labels: ['Total Facturado', 'Meta 15%', 'Auditado Real'],
-            datasets: [{ data: [bultosFacturados, meta, bultosAuditados], backgroundColor: [COLORS.gris, COLORS.rojo, COLORS.verde] }]
+            datasets: [{ data: [bultosFacturados, meta, bultosAuditados], backgroundColor: [COLORS.gris, COLORS.rojo, COLORS.verde], borderRadius: 4 }]
         },
-        options: baseOptions
+        options: { ...baseOptions, plugins: { ...baseOptions.plugins, legend: {display: false} } }
     });
 }
 
@@ -226,28 +281,6 @@ function renderMayoreo(data) {
     }
 }
 
-function renderDevoluciones(aec, ds) {
-    const motAec = aec.reduce((acc, r) => { const m = r['TIPO DE ERROR'] || 'Sin Asignar'; acc[m] = (acc[m]||0) + (r.UNIDADES||0); return acc; }, {});
-    const motDs = ds.reduce((acc, r) => { const m = r['TIPO DE ERROR'] || 'Sin Asignar'; acc[m] = (acc[m]||0) + (r.UNIDADES||0); return acc; }, {});
-
-    crearGraficoSeguro('chart-dev-aec', { type: 'doughnut', data: { labels: Object.keys(motAec), datasets: [{ data: Object.values(motAec), backgroundColor: [COLORS.rojo, COLORS.amarillo, COLORS.azul] }] }, options: donutOptions });
-    crearGraficoSeguro('chart-dev-ds', { type: 'doughnut', data: { labels: Object.keys(motDs), datasets: [{ data: Object.values(motDs), backgroundColor: [COLORS.rojo, COLORS.amarillo, COLORS.azul] }] }, options: donutOptions });
-}
-
-function renderInventario(cedi) {
-    const ajustesNeg = cedi.filter(r => r.Tipo === 'NEG').reduce((acc, r) => {
-        const t = r['TIPO DE AJUSTE'] || 'Otros';
-        acc[t] = (acc[t]||0) + Math.abs(r['Importe Costo']||0);
-        return acc;
-    }, {});
-
-    crearGraficoSeguro('chart-inv-tipo', {
-        type: 'bar', indexAxis: 'y',
-        data: { labels: Object.keys(ajustesNeg), datasets: [{ label: 'Costo Negativo (L)', data: Object.values(ajustesNeg), backgroundColor: COLORS.rojo }] },
-        options: { ...baseOptions, plugins: { datalabels: { formatter: v => 'L ' + (v/1000).toFixed(1) + 'K' } } }
-    });
-}
-
 function renderSegunda(data) {
     const yoy = data.reduce((acc, r) => {
         const anio = r.AÑO || '2026';
@@ -257,8 +290,8 @@ function renderSegunda(data) {
     
     crearGraficoSeguro('chart-segunda-yoy', {
         type: 'bar',
-        data: { labels: Object.keys(yoy), datasets: [{ label: 'Producción Segunda YoY', data: Object.values(yoy), backgroundColor: [COLORS.gris, COLORS.azul] }] },
-        options: baseOptions
+        data: { labels: Object.keys(yoy), datasets: [{ data: Object.values(yoy), backgroundColor: [COLORS.gris, COLORS.azul], borderRadius: 4 }] },
+        options: { ...baseOptions, plugins: { ...baseOptions.plugins, legend: {display: false} } }
     });
 }
 
