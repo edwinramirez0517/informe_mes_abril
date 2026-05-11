@@ -3,94 +3,118 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Informe de Producción CEDIS - Abril 2026</title>
+    <title>Informe de Gestión CEDIS 2026 - El Compadre</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@300;400;500;600;700;800&display=swap');
-        :root { --primary: #1a237e; --primary-light: #3949ab; --primary-dark: #0d1642; --accent: #ff6f00; --accent-light: #ffa040; --success: #2e7d32; --danger: #c62828; --warning: #fbc02d; --gray-100: #f8f9fa; --gray-200: #e9ecef; --gray-300: #dee2e6; --gray-800: #343a40; --white: #ffffff; --shadow-md: 0 4px 6px rgba(0,0,0,0.07); }
+
+        :root {
+            --primary: #1a237e;
+            --primary-light: #3949ab;
+            --primary-dark: #0d1642;
+            --accent: #ff6f00;
+            --accent-light: #ffa040;
+            --success: #2e7d32;
+            --danger: #c62828;
+            --warning: #fbc02d;
+            --gray-100: #f8f9fa;
+            --gray-200: #e9ecef;
+            --gray-300: #dee2e6;
+            --gray-800: #343a40;
+            --white: #ffffff;
+            --shadow-md: 0 4px 6px rgba(0,0,0,0.07);
+        }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Inter', sans-serif; background-color: #f0f2f5; color: var(--gray-800); display: flex; min-height: 100vh; overflow-x: hidden; }
 
+        /* SIDEBAR PROFESIONAL */
         .sidebar { width: 280px; background: var(--primary-dark); color: white; position: fixed; height: 100vh; overflow-y: auto; z-index: 1000; transition: transform 0.3s ease; }
         .sidebar.collapsed { transform: translateX(-280px); }
-        .sidebar-header { padding: 30px 20px; text-align: center; background: rgba(0,0,0,0.2); }
-        .sidebar-header h2 { font-family: 'Poppins', sans-serif; font-size: 1.5rem; font-weight: 800; color: var(--accent-light); }
-        .nav-group { padding: 20px 20px 5px; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 2px; color: rgba(255,255,255,0.4); font-weight: 700; }
-        .nav-link { display: flex; align-items: center; padding: 12px 25px; color: rgba(255,255,255,0.7); text-decoration: none; font-size: 0.9rem; font-weight: 500; border-left: 4px solid transparent; cursor: pointer; transition: 0.2s;}
+        .sidebar-header { padding: 30px 20px; text-align: center; background: rgba(0,0,0,0.2); border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .sidebar-header h2 { font-family: 'Poppins', sans-serif; font-size: 1.4rem; font-weight: 800; color: var(--accent-light); }
+        .nav-group { padding: 25px 25px 10px; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 2px; color: rgba(255,255,255,0.4); font-weight: 700; }
+        .nav-link { display: flex; align-items: center; padding: 12px 25px; color: rgba(255,255,255,0.7); text-decoration: none; font-size: 0.9rem; font-weight: 500; border-left: 4px solid transparent; transition: 0.2s; cursor: pointer; }
         .nav-link:hover, .nav-link.active { background: rgba(255,255,255,0.1); color: white; border-left-color: var(--accent); }
 
+        /* CONTENIDO PRINCIPAL */
         .main-content { flex: 1; margin-left: 280px; padding: 0; transition: margin-left 0.3s ease, width 0.3s ease; width: calc(100% - 280px); }
         .main-content.expanded { margin-left: 0; width: 100%; }
 
         header { background: var(--white); padding: 15px 40px; display: flex; align-items: center; justify-content: space-between; box-shadow: var(--shadow-md); position: sticky; top: 0; z-index: 900; }
         .header-left { display: flex; align-items: center; gap: 20px; }
         .hamburger { font-size: 1.8rem; background: none; border: none; color: var(--primary); cursor: pointer; }
-        .header-title { font-family: 'Poppins', sans-serif; font-weight: 700; color: var(--primary); font-size: 1.2rem; }
+        .header-title { font-family: 'Poppins', sans-serif; font-weight: 700; color: var(--primary); font-size: 1.1rem; }
 
-        .section { padding: 40px; display: none; width: 100%; max-width: 1600px; margin: 0 auto; }
+        .section { padding: 40px; display: none; width: 100%; max-width: 1700px; margin: 0 auto; }
         .section.active { display: block; animation: fadeIn 0.4s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
         .page-title { font-family: 'Poppins', sans-serif; font-size: 2.2rem; font-weight: 800; color: var(--primary-dark); margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center;}
-        .page-title span { font-size: 0.9rem; color: var(--accent); background: rgba(255,111,0,0.1); padding: 5px 15px; border-radius: 20px; }
+        .page-title span { font-size: 0.9rem; font-weight: 600; color: var(--accent); background: rgba(255,111,0,0.1); padding: 5px 15px; border-radius: 20px; }
 
-        .filter-container { display: flex; gap: 10px; margin-bottom: 25px; flex-wrap: wrap;}
-        .btn-filter { padding: 10px 25px; border-radius: 30px; border: 1px solid var(--gray-300); background: var(--white); font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: 0.3s; }
+        /* FILTROS TIPO PÍLDORA */
+        .filter-container { display: flex; gap: 10px; margin-bottom: 30px; flex-wrap: wrap;}
+        .btn-filter { padding: 10px 25px; border-radius: 30px; border: 1px solid var(--gray-300); background: var(--white); font-weight: 600; font-size: 0.9rem; color: var(--gray-800); cursor: pointer; transition: 0.3s; }
+        .btn-filter:hover { border-color: var(--primary); color: var(--primary); }
         .btn-filter.active { background: var(--primary); color: white; border-color: var(--primary); box-shadow: var(--shadow-md); }
 
-        .gauge-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 30px; }
-        .gauge-card { background: white; border-radius: 16px; padding: 20px; text-align: center; box-shadow: var(--shadow-md); border-top: 4px solid var(--primary); }
+        /* KPI CARDS (RESALTADOS) */
+        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 25px; margin-bottom: 35px; }
+        .kpi-card { background: var(--white); border-radius: 16px; padding: 30px; box-shadow: var(--shadow-md); border-left: 6px solid var(--primary); }
+        .kpi-title { font-size: 0.8rem; font-weight: 700; color: #7f8c8d; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+        .kpi-value { font-family: 'Poppins', sans-serif; font-size: 2.4rem; font-weight: 800; color: var(--primary-dark); margin-bottom: 8px;}
+        .kpi-detail { font-size: 0.85rem; color: #7f8c8d; font-weight: 600; }
+        .kpi-progress { height: 10px; background: var(--gray-200); border-radius: 5px; margin-top: 15px; overflow: hidden; }
+
+        /* GAUGES (INDICADORES DE AGUJA) */
+        .gauge-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 35px; }
+        .gauge-card { background: white; border-radius: 16px; padding: 25px; text-align: center; box-shadow: var(--shadow-md); border-top: 4px solid var(--primary); }
         .gauge-container { height: 160px; width: 100%; position: relative; }
-        .gauge-title { font-weight: 700; font-size: 0.9rem; color: var(--primary-dark); text-transform: uppercase; margin-top: 10px; }
+        .gauge-title { font-weight: 700; font-size: 0.95rem; color: var(--primary-dark); text-transform: uppercase; margin-top: 15px; }
         .gauge-value { font-size: 1.8rem; font-weight: 800; font-family: 'Poppins'; }
 
-        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }
-        .kpi-card { background: var(--white); border-radius: 16px; padding: 25px; box-shadow: var(--shadow-md); border-left: 5px solid var(--primary); }
-        .kpi-title { font-size: 0.8rem; font-weight: 700; color: #7f8c8d; text-transform: uppercase; margin-bottom: 10px; }
-        .kpi-value { font-family: 'Poppins', sans-serif; font-size: 2.2rem; font-weight: 800; color: var(--primary-dark); margin-bottom: 5px;}
-        .kpi-detail { font-size: 0.8rem; color: #7f8c8d; font-weight: 600; line-height: 1.4;}
+        /* GRIDS DE GRÁFICOS */
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(500px, 1fr)); gap: 30px; margin-bottom: 35px; }
+        .chart-card { background: var(--white); border-radius: 20px; padding: 35px; box-shadow: var(--shadow-md); border: 1px solid var(--gray-200); width: 100%; }
+        .chart-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid var(--gray-200); }
+        .chart-header h3 { font-family: 'Poppins', sans-serif; font-size: 1.1rem; font-weight: 700; color: var(--primary-dark); text-transform: uppercase;}
+        .chart-container { position: relative; height: 400px; width: 100%; }
 
-        .seguimiento-table-card { background: var(--white); border-radius: 12px; box-shadow: var(--shadow-md); overflow: hidden; margin-bottom: 30px; width: 100%; border: 1px solid var(--gray-200); }
-        .seguimiento-header { padding: 20px 30px; background: var(--primary); color: white; display: flex; justify-content: space-between; align-items: center; }
-        .seguimiento-header h3 { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 1.2rem; margin: 0; }
-        .seguimiento-table-wrapper { overflow-x: auto; }
-        .seguimiento-table { width: 100%; border-collapse: collapse; min-width: 1000px; }
-        .seguimiento-table th { background: var(--primary-light); color: white; padding: 15px; text-align: center; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; border-right: 1px solid rgba(255,255,255,0.2); vertical-align: middle; }
-        .seguimiento-table td { padding: 15px; border-bottom: 1px solid var(--gray-200); border-right: 1px solid var(--gray-100); font-size: 0.95rem; font-weight: 600; text-align: center; color: var(--gray-800); }
-        .seguimiento-table td:first-child { text-align: left; font-weight: 700; color: var(--primary-dark); }
-        .seguimiento-table tr:hover { background-color: #f8f9fa; }
-        .pct-badge { padding: 5px 10px; border-radius: 6px; font-weight: 800; color: white; display: inline-block; min-width: 70px; }
+        /* TABLAS DE ALTO NIVEL (ESTILO PDF) */
+        .table-card { background: var(--white); border-radius: 16px; box-shadow: var(--shadow-md); overflow: hidden; margin-bottom: 35px; border: 1px solid var(--gray-200); width: 100%; }
+        .table-header { padding: 25px 35px; background: var(--primary-dark); color: white; display: flex; justify-content: space-between; align-items: center; }
+        .table-header h3 { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 1.2rem; }
+        .table-wrapper { overflow-x: auto; max-height: 550px; }
+        table { width: 100%; border-collapse: collapse; min-width: 1000px; }
+        th { background: #f1f4f9; padding: 18px 25px; text-align: left; font-size: 0.8rem; font-weight: 800; color: #5d6d7e; text-transform: uppercase; position: sticky; top: 0; z-index: 10; border-bottom: 2px solid var(--gray-300); text-align: center;}
+        th.text-left { text-align: left !important; }
+        td { padding: 18px 25px; border-bottom: 1px solid var(--gray-200); font-size: 1rem; font-weight: 600; color: #2c3e50; text-align: center; }
+        td.text-left { text-align: left !important; font-weight: 700; color: var(--primary-dark); }
+        td.text-right { text-align: right !important; }
+        tr:hover { background-color: #f8faff; }
+        
+        .badge-pct { padding: 6px 12px; border-radius: 8px; font-weight: 800; color: white; display: inline-block; min-width: 75px; }
 
-        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 30px; margin-bottom: 30px; }
-        .chart-card { background: var(--white); border-radius: 16px; padding: 25px; box-shadow: var(--shadow-md); border: 1px solid var(--gray-200); width: 100%; }
-        .chart-header { display: flex; justify-content: space-between; border-bottom: 2px solid var(--gray-100); padding-bottom: 15px; margin-bottom: 20px; }
-        .chart-header h3 { font-family: 'Poppins', sans-serif; font-size: 1.1rem; color: var(--primary-dark); text-transform: uppercase; font-weight: 700; }
-        .chart-container { position: relative; height: 350px; width: 100%; }
-
-        .table-card { background: var(--white); border-radius: 16px; padding: 0; box-shadow: var(--shadow-md); overflow: hidden; margin-bottom: 30px; width: 100%; border: 1px solid var(--gray-200);}
-        .table-header { padding: 20px 30px; background: var(--gray-100); border-bottom: 1px solid var(--gray-200); font-family: 'Poppins'; font-weight: 700; font-size: 1.1rem; color: var(--primary-dark); }
-        .table-wrapper { overflow-x: auto; max-height: 500px; }
-        .general-table { width: 100%; border-collapse: collapse; min-width: 800px; }
-        .general-table th { background: white; padding: 15px 30px; text-align: left; font-size: 0.8rem; color: #7f8c8d; text-transform: uppercase; position: sticky; top: 0; z-index: 10; border-bottom: 2px solid var(--gray-200);}
-        .general-table td { padding: 15px 30px; border-bottom: 1px solid var(--gray-100); font-size: 0.95rem; font-weight: 600; color: #34495e;}
-        .text-right { text-align: right !important; }
-        .text-left { text-align: left !important; }
+        /* UTILIDADES */
         .mt-4 { margin-top: 1.5rem; }
+        .mb-4 { margin-bottom: 1.5rem; }
     </style>
 </head>
 <body>
     <nav class="sidebar" id="sidebar">
         <div class="sidebar-header"><h2>CEDIS 2026</h2></div>
-        <div class="nav-group">Vista Principal</div>
-        <a class="nav-link active" onclick="showSection('resumen', this)">📊 Cumplimiento por Área</a>
         
-        <div class="nav-group">Entradas</div>
-        <a class="nav-link" onclick="showSection('recepcion', this)">📦 Recepción de Mercadería</a>
+        <div class="nav-group">Vista General</div>
+        <a class="nav-link active" onclick="showSection('resumen', this)">📊 Cumplimiento Operativo</a>
+        
+        <div class="nav-group">Gestión de Entradas</div>
+        <a class="nav-link" onclick="showSection('recepcion', this)">📦 Recepción Mercadería</a>
         <a class="nav-link" onclick="showSection('contenedores', this)">🚢 Descarga Contenedores</a>
         
-        <div class="nav-group">Producción</div>
+        <div class="nav-group">Procesos Internos</div>
         <a class="nav-link" onclick="showSection('etiquetado', this)">🏷️ Área de Etiquetado</a>
         <a class="nav-link" onclick="showSection('control', this)">✅ Control y Etiquetado</a>
         
@@ -116,56 +140,77 @@
         <header>
             <div class="header-left">
                 <button class="hamburger" onclick="toggleMenu()">☰</button>
-                <div class="header-title">INFORME DE PRODUCCIÓN CEDIS</div>
+                <div class="header-title">SISTEMA INTEGRAL DE GESTIÓN OPERATIVA</div>
             </div>
-            <div style="font-weight: 800; color: var(--accent); font-size: 1rem;">ABRIL 2026</div>
+            <div style="font-weight: 800; color: var(--accent); font-size: 1rem; background: rgba(255,111,0,0.1); padding: 5px 15px; border-radius: 20px;">ABRIL 2026</div>
         </header>
 
-        <!-- 0. RESUMEN -->
+        <!-- 0. RESUMEN EJECUTIVO -->
         <section id="resumen" class="section active">
-            <div class="page-title">DASHBOARD ABRIL <span>Cumplimiento por Área</span></div>
+            <div class="page-title">Cumplimiento de Metas Mensuales <span>Informe al Corte</span></div>
             <div class="gauge-grid" id="gauge-container"></div>
-            <div class="seguimiento-table-card">
-                <div class="seguimiento-header"><h3>Reporte General de Cumplimiento vs Meta</h3></div>
-                <div class="seguimiento-table-wrapper">
-                    <table class="seguimiento-table" id="tabla-seguimiento">
-                        <thead><tr><th class="text-left">ÁREA OPERATIVA</th><th>META MENSUAL</th><th>ACUMULADO REAL</th><th>DIFERENCIA VS META</th><th>PORCENTAJE DE CUMPLIMIENTO</th></tr></thead>
+            <div class="table-card">
+                <div class="table-header"><h3>Reporte de Producción Acumulada vs Meta Mensual</h3></div>
+                <div class="table-wrapper">
+                    <table id="tabla-seguimiento">
+                        <thead>
+                            <tr>
+                                <th class="text-left">ÁREA OPERATIVA</th>
+                                <th>META MENSUAL</th>
+                                <th>ACUMULADO REAL</th>
+                                <th>DIFERENCIA VS META</th>
+                                <th>% CUMPLIMIENTO</th>
+                            </tr>
+                        </thead>
                         <tbody></tbody>
                     </table>
                 </div>
             </div>
-            <div class="chart-card"><div class="chart-header"><h3>Tendencia de Cumplimiento Global Semanal</h3></div><div class="chart-container"><canvas id="chartResumenGeneral"></canvas></div></div>
+            <div class="chart-card mt-4">
+                <div class="chart-header"><h3>Tendencia Semanal de Cumplimiento Global (%)</h3></div>
+                <div class="chart-container"><canvas id="chartResumenGeneral"></canvas></div>
+            </div>
         </section>
 
-        <!-- 1. RECEPCION -->
+        <!-- 1. RECEPCIÓN -->
         <section id="recepcion" class="section">
-            <div class="page-title">Recepción de Mercadería</div>
+            <div class="page-title">Recepción de Mercadería <span>Consolidado</span></div>
             <div class="filter-container">
-                <button class="btn-filter active" onclick="filterData('recepcion', 'global', this)">Global</button>
+                <button class="btn-filter active" onclick="filterData('recepcion', 'global', this)">Vista Global</button>
                 <button class="btn-filter" onclick="filterData('recepcion', 'nacional', this)">Nacional</button>
                 <button class="btn-filter" onclick="filterData('recepcion', 'internacional', this)">Internacional</button>
             </div>
             <div class="dashboard-grid">
                 <div class="chart-card"><div class="chart-header"><h3>Evolución Semanal (Unidades)</h3></div><div class="chart-container"><canvas id="chartRecSemanal"></canvas></div></div>
                 <div class="chart-card"><div class="chart-header"><h3>Recepción por División</h3></div><div class="chart-container"><canvas id="chartRecDivision"></canvas></div></div>
-                <div class="chart-card"><div class="chart-header"><h3>Comparativo YoY (2025 vs 2026)</h3></div><div class="chart-container"><canvas id="chartRecYoY"></canvas></div></div>
+                <div class="chart-card"><div class="chart-header"><h3>Comparativo Anual (YoY)</h3></div><div class="chart-container"><canvas id="chartRecYoY"></canvas></div></div>
             </div>
             <div class="table-card">
-                <div class="table-header">Top Proveedores (Participación de Costo)</div>
-                <div class="table-wrapper"><table class="general-table" id="tableRecProveedores"><thead><tr><th>Proveedor</th><th class="text-right">Unidades</th><th class="text-right">Participación (%)</th></tr></thead><tbody></tbody></table></div>
+                <div class="table-header"><h3>Top Proveedores por Volumen y Participación de Costo</h3></div>
+                <div class="table-wrapper">
+                    <table class="general-table" id="tableRecProveedores">
+                        <thead><tr><th class="text-left">Nombre del Proveedor</th><th class="text-right">Unidades Recibidas</th><th class="text-right">Participación en Costo (%)</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
             </div>
         </section>
 
         <!-- 2. CONTENEDORES -->
         <section id="contenedores" class="section">
-            <div class="page-title">Descarga de Contenedores</div>
+            <div class="page-title">Descarga de Contenedores <span>Productividad</span></div>
             <div class="dashboard-grid">
-                <div class="chart-card"><div class="chart-header"><h3>Tiempos de Descarga por País (Hrs)</h3></div><div class="chart-container"><canvas id="chartContTiempos"></canvas></div></div>
-                <div class="chart-card"><div class="chart-header"><h3>Costo Operativo Semanal</h3></div><div class="chart-container"><canvas id="chartContCostos"></canvas></div></div>
+                <div class="chart-card"><div class="chart-header"><h3>Tiempo Promedio de Descarga por País (Hrs)</h3></div><div class="chart-container"><canvas id="chartContTiempos"></canvas></div></div>
+                <div class="chart-card"><div class="chart-header"><h3>Evolución Semanal de Costo Operativo</h3></div><div class="chart-container"><canvas id="chartContCostos"></canvas></div></div>
             </div>
             <div class="table-card">
-                <div class="table-header">Detalle Operativo por Contenedor</div>
-                <div class="table-wrapper"><table class="general-table" id="tableContenedores"><thead><tr><th>Nº Contenedor</th><th>País</th><th style="text-align:center;">Personal Asignado</th><th>Tiempo de Descarga</th><th>Min. por Persona</th><th class="text-right">Costo Operativo</th></tr></thead><tbody></tbody></table></div>
+                <div class="table-header"><h3>Detalle Operativo por Contenedor (Eficiencia)</h3></div>
+                <div class="table-wrapper">
+                    <table class="general-table" id="tableContenedores">
+                        <thead><tr><th class="text-left">Contenedor</th><th>País Origen</th><th>Personal</th><th>Tiempo Total</th><th>Min/Persona</th><th class="text-right">Costo Operativo</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
             </div>
         </section>
 
@@ -197,9 +242,9 @@
 
         <!-- 5. DISTRIBUCION -->
         <section id="distribucion" class="section">
-            <div class="page-title">Distribución Comercial</div>
+            <div class="page-title">Distribución Comercial <span>Tiendas</span></div>
             <div class="filter-container">
-                <button class="btn-filter active" onclick="filterData('distribucion', 'global', this)">Todas</button>
+                <button class="btn-filter active" onclick="filterData('distribucion', 'global', this)">Todas las Sucursales</button>
                 <button class="btn-filter" onclick="filterData('distribucion', 'mayoreo', this)">Solo Mayoreo</button>
                 <button class="btn-filter" onclick="filterData('distribucion', 'detalle', this)">Solo Detalle</button>
             </div>
@@ -230,6 +275,7 @@
                 <div class="kpi-card" style="border-left-color: var(--success);"><div class="kpi-title">% Cumplimiento Logístico</div><div class="kpi-value" id="kpi-desp-cumpl" style="color: var(--success);">0%</div></div>
             </div>
             <div class="dashboard-grid">
+                <div class="chart-card"><div class="chart-header"><h3>Envíos Semanales (Unidades)</h3></div><div class="chart-container"><canvas id="chartDespachoSemanal"></canvas></div></div>
                 <div class="chart-card"><div class="chart-header"><h3>Transporte Interno vs Externo</h3></div><div class="chart-container"><canvas id="chartDespTransp"></canvas></div></div>
                 <div class="chart-card"><div class="chart-header"><h3>Despacho por Compañía</h3></div><div class="chart-container"><canvas id="chartDespCia"></canvas></div></div>
             </div>
@@ -245,6 +291,7 @@
                 <div class="kpi-card" style="border-left-color: var(--accent);"><div class="kpi-title">% Venta vs Enviado</div><div class="kpi-value" id="kpi-com-pct" style="color: var(--accent);">0%</div></div>
             </div>
             <div class="dashboard-grid">
+                <div class="chart-card"><div class="chart-header"><h3>Balance: Despacho vs Ventas Tiendas</h3></div><div class="chart-container"><canvas id="chartDespachoVentas"></canvas></div></div>
                 <div class="chart-card" style="grid-column: span 2;"><div class="chart-header"><h3>Comparativo por División: Enviado vs Vendido</h3></div><div class="chart-container"><canvas id="chartComDiv"></canvas></div></div>
             </div>
         </section>
@@ -258,8 +305,9 @@
                 <div class="kpi-card" style="border-left-color: var(--success);"><div class="kpi-title">% Cobertura (Meta 15%)</div><div class="kpi-value" id="kpi-aud-cob" style="color: var(--success);">0%</div></div>
             </div>
             <div class="dashboard-grid">
+                <div class="chart-card"><div class="chart-header"><h3>Embudo: Facturado vs Auditado</h3></div><div class="chart-container"><canvas id="chartAudEmbudo"></canvas></div></div>
                 <div class="chart-card"><div class="chart-header"><h3>Auditado por Compañía</h3></div><div class="chart-container"><canvas id="chartAudCia"></canvas></div></div>
-                <div class="chart-card"><div class="chart-header"><h3>Tendencia Semanal de Auditoría</h3></div><div class="chart-container"><canvas id="chartAudSemanal"></canvas></div></div>
+                <div class="chart-card"><div class="chart-header"><h3>Tendencia Semanal</h3></div><div class="chart-container"><canvas id="chartAudSemanal"></canvas></div></div>
             </div>
             <div class="table-card">
                 <div class="table-header">Productividad de Auditores (Bultos Procesados)</div>
@@ -334,7 +382,7 @@
                 <div class="kpi-card"><div class="kpi-title">Facturas Aplicadas (NC)</div><div class="kpi-value" id="kpi-dev-apl">0</div></div>
                 <div class="kpi-card"><div class="kpi-title">Facturas Sin Aplicar</div><div class="kpi-value" id="kpi-dev-sin">0</div></div>
                 <div class="kpi-card" style="border-left-color: var(--success);"><div class="kpi-title">Eficiencia NC</div><div class="kpi-value" id="kpi-dev-efi" style="color: var(--success);">0%</div></div>
-                <div class="kpi-card" style="border-left-color: var(--danger);"><div class="kpi-title">% Devolución Global</div><div class="kpi-value" id="kpi-dev-pct" style="color: var(--danger);">0%</div><div class="kpi-detail">Recibido vs Enviado Histórico</div></div>
+                <div class="kpi-card" style="border-left-color: var(--danger);"><div class="kpi-title">% Devolución Global</div><div class="kpi-value" id="kpi-dev-pct" style="color: var(--danger);">0%</div></div>
             </div>
             <div class="dashboard-grid">
                 <div class="chart-card"><div class="chart-header"><h3>Motivos de Retorno</h3></div><div class="chart-container"><canvas id="chartDevMotivos"></canvas></div></div>
@@ -353,7 +401,7 @@
             <div class="filter-container">
                 <button class="btn-filter active" onclick="filterData('inventario', 'global', this)">Vista Global</button>
                 <button class="btn-filter" onclick="filterData('inventario', 'cedis', this)">Solo CEDIS</button>
-                <button class="btn-filter" onclick="filterData('inventario', 'tiendas', this)">Comparativo Tiendas (Fijo CEDIS)</button>
+                <button class="btn-filter" onclick="filterData('inventario', 'tiendas', this)">Comparativo Tiendas</button>
             </div>
             <div class="kpi-grid">
                 <div class="kpi-card" style="border-left-color: var(--success);"><div class="kpi-title">Total Ajustes Positivos</div><div class="kpi-value" id="kpi-inv-pos" style="color: var(--success);">0</div></div>
@@ -361,6 +409,7 @@
                 <div class="kpi-card" style="border-left-color: var(--accent);"><div class="kpi-title">Impacto Neto (Lps)</div><div class="kpi-value" id="kpi-inv-neto" style="color: var(--accent);">L 0</div></div>
             </div>
             <div class="dashboard-grid">
+                <div class="chart-card"><div class="chart-header"><h3>Ajustes Negativos por Semana</h3></div><div class="chart-container"><canvas id="chartInvNegativos"></canvas></div></div>
                 <div class="chart-card"><div class="chart-header"><h3>Ajustes por Departamento</h3></div><div class="chart-container"><canvas id="chartInvDept"></canvas></div></div>
                 <div class="chart-card"><div class="chart-header"><h3>División: Positivo vs Negativo</h3></div><div class="chart-container"><canvas id="chartInvDivPN"></canvas></div></div>
                 <div class="chart-card"><div class="chart-header"><h3>Tipos de Ajuste Generados</h3></div><div class="chart-container"><canvas id="chartInvTipo"></canvas></div></div>
@@ -401,7 +450,6 @@
 
     </main>
 
-    <script src="app.js"></script>
     <script>
         function toggleMenu() {
             document.getElementById('sidebar').classList.toggle('collapsed');
@@ -423,5 +471,6 @@
             }
         }
     </script>
+    <script src="app.js"></script>
 </body>
 </html>
