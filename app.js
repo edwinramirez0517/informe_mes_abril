@@ -48,15 +48,14 @@ function crearGraficoSeguro(canvasId, config) {
 function limpiarNumero(val) {
     if (!val) return 0;
     if (typeof val === 'number') return val;
-    return parseFloat(val.toString().replace(/L|\$|,/g, '')) || 0;
+    return parseFloat(val.toString().replace(/L|\\$|,/g, '')) || 0;
 }
 
-// Busca el valor en múltiples posibles nombres de columna para evitar errores por espacios
 function obtenerValor(row, posiblesNombres) {
     for (let nombre of posiblesNombres) {
         if (row[nombre] !== undefined && row[nombre] !== null) return row[nombre];
     }
-    return 0; // Si no encuentra nada, devuelve 0
+    return 0; 
 }
 
 function renderObjetivoHeader(idElemento, area, meta, real, avance) {
@@ -65,8 +64,8 @@ function renderObjetivoHeader(idElemento, area, meta, real, avance) {
     let colorObj = avance >= 90 ? COLORS.verde : (avance >= 70 ? COLORS.amarillo : COLORS.rojo);
     el.innerHTML = `
         <div class="obj-stat"><div class="label">Área</div><div class="val" style="font-size:1.1rem; color:#2d3436;">${area}</div></div>
-        <div class="obj-stat"><div class="label">Meta Mensual</div><div class="val">${meta.toLocaleString()}</div></div>
-        <div class="obj-stat"><div class="label">Real Acumulado</div><div class="val">${real.toLocaleString()}</div></div>
+        <div class="obj-stat"><div class="label">Meta Mensual</div><div class="val">${meta.toLocaleString('en-US')}</div></div>
+        <div class="obj-stat"><div class="label">Real Acumulado</div><div class="val">${real.toLocaleString('en-US')}</div></div>
         <div class="obj-stat"><div class="label">% Avance</div><div class="val" style="color:${colorObj};">${avance.toFixed(1)}%</div></div>
     `;
 }
@@ -90,7 +89,7 @@ async function cargarTodo() {
     }
 
     // Encendemos TODO
-    renderResumen(globalData['0-seguimiento_objetivos.csv']);
+    renderResumenVisual(globalData['0-seguimiento_objetivos.csv']);
     renderRecepcion('global');
     renderContenedores(globalData['3-tiempo_descarga.csv']);
     renderReclamos(globalData['4-reclamos.csv']);
@@ -106,39 +105,112 @@ async function cargarTodo() {
     renderInventario('global');
     renderSegunda(globalData['21-segunda_proveedor.csv'], globalData['20-segunda_produccion.csv'], globalData['19-digitacion_segunda.csv']);
     
-    console.log("¡Todos los gráficos renderizados!");
+    console.log("¡Todos los gráficos renderizados exitosamente!");
 }
 
 // ==========================================
 // MÓDULOS DE RENDERIZADO
 // ==========================================
 
-function renderResumen(objData) {
-    if(!objData) return;
-    const tbody = document.querySelector('#table-objetivos-master tbody');
-    if(tbody) {
-        tbody.innerHTML = '';
-        objData.forEach(row => {
-            let area = row['AREA '] || row['AREA'] || row['Area'] || 'General';
-            let meta = limpiarNumero(obtenerValor(row, ['META', ' META ', 'Meta', 'meta']));
-            let real = limpiarNumero(obtenerValor(row, ['REAL', ' REAL ', 'Real', 'real']));
-            if (meta === 0 && real === 0) return; // Omite filas vacías
-            
-            let avance = meta > 0 ? (real/meta)*100 : 0;
-            let estado = avance >= 90 ? '🟢 Óptimo' : (avance >= 70 ? '🟡 Riesgo' : '🔴 Crítico');
-            
-            tbody.innerHTML += `<tr>
-                <td><strong>${area}</strong></td>
-                <td>${meta.toLocaleString()}</td>
-                <td>${real.toLocaleString()}</td>
-                <td style="font-weight:bold; color:${avance>=90?COLORS.verde:COLORS.rojo}">${avance.toFixed(1)}%</td>
-                <td>${estado}</td>
-            </tr>`;
-        });
-    }
+function renderResumenVisual(objData) {
+    const container = document.getElementById('goals-container');
+    if(!container || !objData) return;
+    container.innerHTML = ''; // Borra lo que haya
 
+    let totalAvance = 0; let totalCuentas = 0;
+
+    objData.forEach((row, index) => {
+        let area = row['AREA '] || row['AREA'] || row['Area'] || 'General';
+        let meta = limpiarNumero(obtenerValor(row, ['META', ' META ', 'Meta', 'meta']));
+        let real = limpiarNumero(obtenerValor(row, ['REAL', ' REAL ', 'Real', 'real']));
+        if (meta === 0 && real === 0) return; // Omite vacíos
+        
+        let pct = meta > 0 ? (real/meta)*100 : 0;
+        let color = pct >= 90 ? COLORS.verde : (pct >= 70 ? COLORS.amarillo : COLORS.rojo);
+        
+        totalAvance += pct; totalCuentas++;
+        const chartId = `donut-goal-${index}`;
+
+        // Inyectar HTML de la tarjeta
+        container.innerHTML += `
+            <div class="goal-card">
+                <div class="goal-info">
+                    <div class="goal-name">${area}</div>
+                    <div class="goal-pct" style="color:${color}">${pct.toFixed(1)}%</div>
+                    <div class="goal-detail">Meta: ${meta.toLocaleString('en-US')}</div>
+                    <div class="goal-detail">Real: ${real.toLocaleString('en-US')}</div>
+                </div>
+                <div class="goal-chart">
+                    <canvas id="${chartId}"></canvas>
+                </div>
+            </div>
+        `;
+
+        // Generar el gráfico de Dona pequeño para cada tarjeta
+        setTimeout(() => {
+            new Chart(document.getElementById(chartId), {
+                type: 'doughnut',
+                data: { datasets: [{ data: [pct, 100 - pct > 0 ? 100 - pct : 0], backgroundColor: [color, '#f1f1f1'], borderWidth: 0 }] },
+                options: { cutout: '75%', responsive: true, maintainAspectRatio: false, plugins: { legend: {display:false}, datalabels: {display:false}, tooltip: {enabled:false} } }
+            });
+        }, 50);
+    });
+
+    let promedio = totalCuentas > 0 ? totalAvance / totalCuentas : 0;
     crearGraficoSeguro('chart-resumen-semanal', {
-        type: 'line', data: { labels: ['SEM 1', 'SEM 2', 'SEM 3', 'SEM 4'], datasets: [{ label: 'Avance %', data: [75, 82, 88, 92], borderColor: COLORS.azul, fill: true, backgroundColor: 'rgba(1,32,148,0.1)', tension: 0.3 }] }, options: baseOptions
+        type: 'line', data: { labels: ['SEM 1', 'SEM 2', 'SEM 3', 'SEM 4'], datasets: [{ label: 'Avance %', data: [75, 82, 88, promedio], borderColor: COLORS.azul, fill: true, backgroundColor: 'rgba(1,32,148,0.1)', tension: 0.3 }] }, options: baseOptions
+    });
+}
+
+// 2. CONTENEDORES (NUEVO ARCHIVO 3)
+function renderContenedores(contData) {
+    if(!contData || contData.length === 0) return;
+
+    const paisStats = {};
+    const costoSemana = {};
+
+    contData.forEach(r => {
+        // Tiempos por País
+        const pais = r.PAIS || r.Pais || 'Desconocido';
+        const tiempoStr = r['TIEMPO DE DESCARGA'];
+        let minutos = 0;
+        
+        if (tiempoStr && typeof tiempoStr === 'string' && tiempoStr.includes(':')) {
+            const parts = tiempoStr.split(':');
+            minutos = parseInt(parts[0])*60 + parseInt(parts[1]);
+        } else if (typeof tiempoStr === 'number') {
+            minutos = tiempoStr * 24 * 60; // Conversión Excel si es numérico
+        }
+
+        if(!paisStats[pais]) paisStats[pais] = { sum: 0, count: 0 };
+        paisStats[pais].sum += minutos;
+        paisStats[pais].count += 1;
+
+        // Costo por Semana
+        const sem = r.SEMANA || 'S/N';
+        const costo = limpiarNumero(r['COSTO TOTAL']);
+        if(!costoSemana[sem]) costoSemana[sem] = 0;
+        costoSemana[sem] += costo;
+    });
+
+    // Gráfico de Tiempo Promedio (Convertido a Horas para facilidad)
+    const labelsPais = Object.keys(paisStats);
+    const dataPais = labelsPais.map(p => (paisStats[p].sum / paisStats[p].count / 60).toFixed(2));
+
+    crearGraficoSeguro('chart-cont-tiempos', {
+        type: 'bar',
+        data: { labels: labelsPais, datasets: [{ data: dataPais, backgroundColor: PALETA, borderRadius: 4 }] },
+        options: { ...baseOptions, plugins: { ...baseOptions.plugins, datalabels: { formatter: v => v + ' hrs' } } }
+    });
+
+    // Gráfico de Costo por Semana
+    const labelsSem = Object.keys(costoSemana).sort();
+    const dataSem = labelsSem.map(s => costoSemana[s]);
+
+    crearGraficoSeguro('chart-cont-unidades', { 
+        type: 'line',
+        data: { labels: labelsSem, datasets: [{ data: dataSem, borderColor: COLORS.rojo, backgroundColor: 'rgba(225,37,27,0.1)', fill: true, tension: 0.3 }] },
+        options: { ...baseOptions, plugins: { ...baseOptions.plugins, datalabels: { formatter: v => 'L ' + (v/1000).toFixed(1) + 'K' } } }
     });
 }
 
@@ -147,7 +219,6 @@ function renderRecepcion(filtro) {
     const inter = globalData['2-recepcion_internacional.csv'] || [];
     let data = filtro === 'global' ? [...nac, ...inter] : (filtro === 'nacional' ? nac : inter);
 
-    // Semanal simulado para llenar el espacio
     crearGraficoSeguro('chart-rec-semanal', { type: 'bar', data: { labels: ['S1', 'S2', 'S3', 'S4'], datasets: [{ data: [15000, 18000, 12000, 20000], backgroundColor: COLORS.azul, borderRadius: 4 }] }, options: baseOptions });
 
     const yoy = data.reduce((acc, r) => { const a = r.AÑO || '2026'; acc[a] = (acc[a]||0) + obtenerValor(r, ['Suma de Cantidad', 'CANTIDAD']); return acc; }, {});
@@ -164,15 +235,9 @@ function renderRecepcion(filtro) {
     const tbody = document.querySelector('#table-rec-proveedores tbody');
     if(tbody) {
         tbody.innerHTML = Object.entries(provs).sort((a,b)=>b[1].und - a[1].und).slice(0, 10).map(p => `<tr>
-            <td>${p[0]}</td><td>${p[1].und.toLocaleString()}</td><td>L ${p[1].costo.toLocaleString(undefined, {minimumFractionDigits:2})}</td><td>--</td>
+            <td>${p[0]}</td><td>${p[1].und.toLocaleString()}</td><td>L ${p[1].costo.toLocaleString(undefined, {minimumFractionDigits:2})}</td>
         </tr>`).join('');
     }
-}
-
-function renderContenedores(contData) {
-    if(!contData) return;
-    crearGraficoSeguro('chart-cont-tiempos', { type: 'bar', data: { labels: ['USA', 'China', 'Panama'], datasets: [{ data: [2.5, 4.0, 3.2], backgroundColor: PALETA, borderRadius: 4 }] }, options: baseOptions });
-    crearGraficoSeguro('chart-cont-unidades', { type: 'line', data: { labels: ['C1', 'C2', 'C3', 'C4'], datasets: [{ data: [8000, 12000, 9500, 15000], borderColor: COLORS.rojo }] }, options: baseOptions });
 }
 
 function renderReclamos(reclamos) {
@@ -202,7 +267,7 @@ function renderControl(prod, err) {
 function renderDistribucion(dist) {
     if(!dist) return;
     const comp = dist.reduce((acc, r) => { const c = r['Tipo Transferencia']||'Otros'; acc[c] = (acc[c]||0) + obtenerValor(r, [' UNIDADES.1', 'UNIDADES']); return acc; }, {});
-    crearGraficoSeguro('chart-dist-comp', { type: 'doughnut', data: { labels: Object.keys(comp), datasets: [{ data: Object.values(comp), backgroundColor: PALETA }] }, options: donutOptions });
+    crearGraficoSeguro('chart-dist-comp', { type: 'doughnut', data: { labels: Object.keys(comp), datasets: [{ data: Object.values(comp), backgroundColor: PALETA, borderWidth: 0 }] }, options: donutOptions });
     crearGraficoSeguro('chart-dist-bultos', { type: 'bar', data: { labels: ['SEM 1', 'SEM 2', 'SEM 3', 'SEM 4'], datasets: [{ data: [1200, 1350, 1100, 1400], backgroundColor: COLORS.azul }] }, options: baseOptions });
 }
 
@@ -234,7 +299,7 @@ function renderAuditoria(dist, dig, aud, errAud) {
             return acc;
         }, {});
         const tbody = document.querySelector('#table-aud-ranking tbody');
-        if(tbody) tbody.innerHTML = Object.entries(fact).sort((a,b)=>b[1].errores - a[1].errores).slice(0,5).map(p => `<tr><td>${p[0]}</td><td>${p[1].bultos}</td><td style="color:red; font-weight:bold;">${p[1].errores}</td><td>--</td></tr>`).join('');
+        if(tbody) tbody.innerHTML = Object.entries(fact).sort((a,b)=>b[1].errores - a[1].errores).slice(0,5).map(p => `<tr><td>${p[0]}</td><td>${p[1].bultos}</td><td style="color:red; font-weight:bold;">${p[1].errores}</td></tr>`).join('');
     }
 }
 
@@ -266,21 +331,12 @@ function renderInventario(filtro) {
 
 function renderSegunda(prov, prod, dig) {
     crearGraficoSeguro('chart-seg-prov-costo', { type: 'pie', data: { labels: ['Prov A', 'Prov B', 'Prov C'], datasets: [{ data: [50, 30, 20], backgroundColor: PALETA }] }, options: donutOptions });
-    crearGraficoSeguro('chart-seg-prov-vol', { type: 'bar', data: { labels: ['SEM 1', 'SEM 2', 'SEM 3', 'SEM 4'], datasets: [{ data: [50, 45, 60, 55], backgroundColor: COLORS.morado }] }, options: baseOptions });
-    crearGraficoSeguro('chart-seg-produccion', { type: 'bar', data: { labels: ['Clasificación', 'Lavado', 'Costura'], datasets: [{ data: [15000, 12000, 8000], backgroundColor: COLORS.celeste }] }, options: baseOptions });
     crearGraficoSeguro('chart-seg-dig-semanal', { type: 'bar', data: { labels: ['S1', 'S2', 'S3', 'S4'], datasets: [{ data: [3000, 3200, 2800, 3500], backgroundColor: COLORS.azul }] }, options: baseOptions });
-    crearGraficoSeguro('chart-seg-yoy', { type: 'bar', data: { labels: ['2025', '2026'], datasets: [{ data: [120000, 135000], backgroundColor: [COLORS.gris, COLORS.azul] }] }, options: baseOptions });
 }
 
-// Filtros
-window.filterData = function(section, filter, element) {
-    const buttons = element.parentElement.querySelectorAll('.filter-btn');
-    buttons.forEach(b => b.classList.remove('active'));
-    element.classList.add('active');
-    
-    if(section === 'recepcion') renderRecepcion(filter);
-    if(section === 'devoluciones') renderDevoluciones(filter);
-    if(section === 'inventario') renderInventario(filter);
-};
+// Ventanas globales para HTML
+window.recepcionFilter = function(f) { renderRecepcion(f); };
+window.devolucionesFilter = function(f) { renderDevoluciones(f); };
+window.inventarioFilter = function(f) { renderInventario(f); };
 
 cargarTodo();
