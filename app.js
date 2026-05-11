@@ -35,7 +35,8 @@ const donutOptions = {
 // ==========================================
 async function cargarCSV(file) {
     return new Promise((resolve) => {
-        Papa.parse(`Datos/${file}`, {
+        // CAMBIAMOS "Datos/" POR "data/"
+        Papa.parse(`data/${file}`, {
             download: true, header: true, dynamicTyping: true, skipEmptyLines: true,
             complete: results => resolve(results.data),
             error: err => { console.error(`Error en ${file}:`, err); resolve([]); }
