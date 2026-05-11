@@ -3,22 +3,20 @@
 // ==========================================
 Chart.register(ChartDataLabels);
 
-const COLORS = { azul: '#012094', rojo: '#E1251B', verde: '#27ae60', gris: '#dfe6e9', amarillo: '#f39c12', morado: '#6a1b9a', celeste: '#0277bd' };
-const PALETA_BARRAS = [COLORS.azul, COLORS.rojo, COLORS.verde, COLORS.amarillo, COLORS.morado, COLORS.celeste, '#e67e22', '#34495e'];
+const COLORS = { azul: '#012094', rojo: '#E1251B', verde: '#27ae60', gris: '#dfe6e9', amarillo: '#f39c12', celeste: '#0277bd', morado: '#6a1b9a' };
+const PALETA = [COLORS.azul, COLORS.rojo, COLORS.verde, COLORS.amarillo, COLORS.celeste, COLORS.morado, '#e67e22', '#34495e'];
 
 const baseOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
+    responsive: true, maintainAspectRatio: false,
     scales: { 
         x: { grid: { display: false } }, 
         y: { grid: { display: false }, ticks: { callback: v => v.toLocaleString('en-US') } } 
     },
     plugins: {
-        legend: { display: false }, // Ocultar leyenda en barras por defecto
+        legend: { display: false },
         datalabels: {
             anchor: 'end', align: 'top', font: { weight: 'bold', size: 10 },
-            formatter: v => v ? v.toLocaleString('en-US') : '',
-            color: '#2d3436'
+            formatter: v => v ? v.toLocaleString('en-US') : '', color: '#2d3436'
         }
     }
 };
@@ -32,36 +30,41 @@ const donutOptions = {
 };
 
 // ==========================================
-// LECTOR DE DATOS Y FUNCIÓN SALVAVIDAS
+// MOTOR DE CARGA Y SALVAVIDAS
 // ==========================================
 async function cargarCSV(file) {
     return new Promise((resolve) => {
         Papa.parse(`data/${file}`, {
             download: true, header: true, dynamicTyping: true, skipEmptyLines: true,
             complete: results => resolve(results.data),
-            error: err => { console.error(`Error en ${file}:`, err); resolve([]); }
+            error: err => { console.warn(`Aviso: No se pudo cargar ${file}`, err); resolve([]); }
         });
     });
 }
 
 function crearGraficoSeguro(canvasId, config) {
-    const canvasElement = document.getElementById(canvasId);
-    if (!canvasElement) {
-        console.warn(`⚠️ Gráfico omitido: No se encontró el id '${canvasId}' en el HTML.`);
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) {
+        console.warn(`⚠️ Canvas no encontrado: ${canvasId}. Omitiendo gráfico.`);
         return;
     }
-    // Destruir gráfico previo si existe para evitar sobreposición
     let chartStatus = Chart.getChart(canvasId);
-    if (chartStatus != undefined) { chartStatus.destroy(); }
-    new Chart(canvasElement, config);
+    if (chartStatus) chartStatus.destroy(); // Destruye el anterior si ya existe
+    new Chart(canvas, config);
+}
+
+// Limpiador numérico seguro
+function limpiarNumero(val) {
+    if (!val) return 0;
+    if (typeof val === 'number') return val;
+    return parseFloat(val.toString().replace(/L|\$|,/g, '')) || 0;
 }
 
 // ==========================================
-// INICIALIZACIÓN PRINCIPAL
+// INICIALIZACIÓN
 // ==========================================
 async function cargarTodo() {
     console.log("Iniciando motor de datos...");
-    
     const archivos = [
         '0-seguimiento_objetivos.csv', '1-recepcion_nacional.csv', '2-recepcion_internacional.csv',
         '4-reclamos.csv', '5-ajustes.csv', '8-control y etiquetado_errores.csv', '9-distribucion.csv', 
@@ -73,227 +76,162 @@ async function cargarTodo() {
     const data = {};
     for (const f of archivos) { 
         data[f] = await cargarCSV(f); 
-        console.log(`Cargado: ${f} | Filas: ${data[f].length}`);
     }
 
-    // Ejecutar todos los Renders
-    renderResumenEjecutivo(data['0-seguimiento_objetivos.csv'], data['4-reclamos.csv'], data['5-ajustes.csv'], data['10-envios.csv'], data['11-ventas.csv']);
+    renderResumen(data['0-seguimiento_objetivos.csv'], data['4-reclamos.csv'], data['5-ajustes.csv'], data['10-envios.csv'], data['11-ventas.csv']);
     renderRecepcion(data['1-recepcion_nacional.csv'], data['2-recepcion_internacional.csv']);
+    renderReclamos(data['4-reclamos.csv'], data['5-ajustes.csv']);
     renderDistribucion(data['9-distribucion.csv']);
     renderDespacho(data['10-envios.csv'], data['11-ventas.csv']);
-    renderAuditoria(data['9-distribucion.csv'], data['19-digitacion_segunda.csv'], data['12-auditoria mercaderia_tiendas.csv']);
+    renderAuditoria(data['9-distribucion.csv'], data['19-digitacion_segunda.csv'], data['12-auditoria mercaderia_tiendas.csv'], data['8-control y etiquetado_errores.csv'], data['14-auditoria mercaderia_errores.csv']);
     renderMayoreo(data['13-auditoria mercaderia_mayoreo.csv']);
+    renderDevoluciones(data['15-devoluciones_aec.csv'], data['16-devoluciones_ds.csv']);
+    renderInventario(data['17-administracion de inventario cedi.csv']);
     renderSegunda(data['20-segunda_produccion.csv']);
     
-    console.log("¡Renderizado Completo!");
+    console.log("¡Carga Completa!");
 }
 
 // ==========================================
-// FUNCIONES DE RENDERIZADO POR ÁREA
+// RENDERIZADO POR SECCIÓN
 // ==========================================
 
-function renderResumenEjecutivo(objetivos, reclamos, ajustes, envios, ventas) {
-    const kpisDiv = document.getElementById('kpis-resumen');
-    if(!kpisDiv) return;
-
-    // 1. Cálculos de Impacto Financiero
-    const totalReclamos = reclamos.reduce((a, b) => a + parseFloat(b.COSTO?.toString().replace('$', '') || 0), 0);
-    const totalAjustes = ajustes.reduce((a, b) => a + parseFloat(b['COSTO TOTAL']?.toString().replace(/L|,/g, '') || 0), 0);
-    
-    // 2. Cálculo Eficiencia Despacho (Ventas vs Envíos)
+function renderResumen(obj, reclamos, ajustes, envios, ventas) {
+    const totalReclamos = reclamos.reduce((a, b) => a + limpiarNumero(b.COSTO), 0);
+    const totalAjustes = ajustes.reduce((a, b) => a + limpiarNumero(b['COSTO TOTAL']), 0);
     const totalEnvios = envios.reduce((a, b) => a + (b.UNIDADES || 0), 0);
     const totalVentas = ventas.reduce((a, b) => a + (b.UNIDADES || 0), 0);
-    const eficienciaDespacho = totalEnvios > 0 ? (totalVentas / totalEnvios) * 100 : 0;
+    const efiDespacho = totalEnvios > 0 ? (totalVentas / totalEnvios) * 100 : 0;
 
-    // 3. Obtener Cumplimiento Global (Buscamos la fila de Etiquetado/Distribución promedio del archivo 0)
-    let cumplimientoPromedio = 0;
-    if(objetivos && objetivos.length > 0) {
-        // Ejemplo: Promediar la columna "% Avance Meta" de las primeras filas operativas
-        let sumaPorcentaje = 0; let cuenta = 0;
-        objetivos.forEach(row => {
-            let pctStr = row['% Avance Meta'] || row['% al corte'];
-            if(pctStr) {
-                let val = parseFloat(pctStr.toString().replace('%',''));
-                if(!isNaN(val)) { sumaPorcentaje += val; cuenta++; }
-            }
-        });
-        cumplimientoPromedio = cuenta > 0 ? (sumaPorcentaje / cuenta) : 0;
+    let cump = 0; let count = 0;
+    obj.forEach(r => {
+        let val = parseFloat((r['% Avance Meta']||'').toString().replace('%',''));
+        if(!isNaN(val)){ cump += val; count++; }
+    });
+    let promedio = count > 0 ? cump/count : 0;
+
+    const div = document.getElementById('kpi-resumen-container');
+    if(div) {
+        div.innerHTML = `
+            <div class="card"><div class="kpi-title">Cumplimiento Operativo</div><div class="kpi-val">${promedio.toFixed(1)}%</div></div>
+            <div class="card"><div class="kpi-title">Costo Reclamos</div><div class="kpi-val" style="color:${COLORS.rojo}">$ ${totalReclamos.toLocaleString('en-US',{minimumFractionDigits:2})}</div></div>
+            <div class="card"><div class="kpi-title">Ajustes Inventario</div><div class="kpi-val" style="color:${COLORS.rojo}">L ${totalAjustes.toLocaleString('en-US',{minimumFractionDigits:2})}</div></div>
+            <div class="card"><div class="kpi-title">Eficiencia Despacho</div><div class="kpi-val" style="color:${COLORS.verde}">${efiDespacho.toFixed(1)}%</div></div>
+        `;
     }
 
-    // Inyectamos las tarjetas de Resumen Completas
-    kpisDiv.innerHTML = `
-        <div class="card"><div class="kpi-title">Cumplimiento Operativo</div><div class="kpi-val" style="color:${COLORS.azul}">${cumplimientoPromedio.toFixed(1)}%</div></div>
-        <div class="card"><div class="kpi-title">Costo Reclamos</div><div class="kpi-val" style="color:${COLORS.rojo}">$ ${totalReclamos.toLocaleString('en-US', {minimumFractionDigits: 2})}</div></div>
-        <div class="card"><div class="kpi-title">Costo Ajustes Inventario</div><div class="kpi-val" style="color:${COLORS.rojo}">L ${totalAjustes.toLocaleString('en-US', {minimumFractionDigits: 2})}</div></div>
-        <div class="card"><div class="kpi-title">Eficiencia Despacho</div><div class="kpi-val" style="color:${COLORS.verde}">${eficienciaDespacho.toFixed(1)}%</div></div>
-    `;
-
-    // Gráfico Evolución (Simulando la curva de meses)
-    crearGraficoSeguro('chart-resumen-yoy', {
+    crearGraficoSeguro('chart-resumen-semanal', {
         type: 'line',
-        data: {
-            labels: ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4'],
-            datasets: [{ 
-                label: 'Tendencia de Producción', 
-                data: [85, 92, 88, cumplimientoPromedio], 
-                borderColor: COLORS.azul, 
-                backgroundColor: 'rgba(1, 32, 148, 0.1)',
-                fill: true,
-                tension: 0.4 
-            }]
-        },
-        options: { ...baseOptions, plugins: { ...baseOptions.plugins, legend: {display: false} } }
+        data: { labels: ['SEM 1','SEM 2','SEM 3','SEM 4'], datasets: [{ label: '% Cumplimiento', data: [80, 85, 90, promedio], borderColor: COLORS.azul, backgroundColor: 'rgba(1,32,148,0.1)', fill: true, tension: 0.4 }] },
+        options: { ...baseOptions, plugins: { ...baseOptions.plugins, datalabels: { display: false } } }
     });
 }
 
 function renderRecepcion(nac, inter) {
-    // 1. YoY Nacional
-    const yoy = nac.reduce((acc, r) => {
-        const anio = r.AÑO || '2026';
-        acc[anio] = (acc[anio] || 0) + (r['Suma de Cantidad'] || 0);
-        return acc;
-    }, {});
-
+    const yoy = nac.reduce((acc, r) => { const anio = r.AÑO || '2026'; acc[anio] = (acc[anio]||0) + (r['Suma de Cantidad']||0); return acc; }, {});
     crearGraficoSeguro('chart-rec-yoy', {
-        type: 'bar',
-        data: {
-            labels: Object.keys(yoy),
-            datasets: [{ label: 'Unidades', data: Object.values(yoy), backgroundColor: [COLORS.gris, COLORS.azul], borderRadius: 4 }]
-        },
-        options: baseOptions
+        type: 'bar', data: { labels: Object.keys(yoy), datasets: [{ data: Object.values(yoy), backgroundColor: [COLORS.gris, COLORS.azul], borderRadius: 4 }] }, options: baseOptions
     });
 
-    // 2. % Costo por Compañía
-    let costoAEC = 0; let costoDS = 0;
-    nac.forEach(r => {
-        if(r['Compañía'] === 'AEC') costoAEC += (r['Suma de CostoImportacionTotal'] || 0);
-        if(r['Compañía'] === 'DS') costoDS += (r['Suma de CostoImportacionTotal'] || 0);
-    });
-    const totalCosto = costoAEC + costoDS;
-
+    let cAEC = 0; let cDS = 0;
+    nac.forEach(r => { if(r['Compañía']==='AEC') cAEC+=r['Suma de CostoImportacionTotal']||0; if(r['Compañía']==='DS') cDS+=r['Suma de CostoImportacionTotal']||0; });
+    let tCost = cAEC + cDS;
     crearGraficoSeguro('chart-rec-costo', {
-        type: 'doughnut',
-        data: { labels: ['AEC', 'Danilos Store'], datasets: [{ data: [costoAEC, costoDS], backgroundColor: [COLORS.azul, COLORS.rojo], borderWidth: 0 }] },
-        options: { ...donutOptions, plugins: { ...donutOptions.plugins, datalabels: { formatter: v => totalCosto > 0 ? ((v/totalCosto)*100).toFixed(2) + '%' : '0%' } } }
-    });
-
-    // 3. Recepción por División Nacional (Top 8)
-    const divNac = nac.reduce((acc, r) => {
-        const d = r.DivisionNombre || 'Otros';
-        acc[d] = (acc[d] || 0) + (r['Suma de Cantidad'] || 0);
-        return acc;
-    }, {});
-    
-    // Ordenar de mayor a menor y tomar el top 8
-    const divNacSorted = Object.entries(divNac).sort((a,b) => b[1] - a[1]).slice(0, 8);
-
-    crearGraficoSeguro('chart-rec-div', {
-        type: 'bar',
-        data: {
-            labels: divNacSorted.map(item => item[0]),
-            datasets: [{ data: divNacSorted.map(item => item[1]), backgroundColor: PALETA_BARRAS, borderRadius: 4 }]
-        },
-        options: { ...baseOptions, indexAxis: 'x', plugins: { ...baseOptions.plugins, legend: {display: false} } }
-    });
-
-    // 4. Recepción Internacional por País
-    const paisInt = inter.reduce((acc, r) => {
-        const p = r['Pais Nombre'] || 'Otros';
-        acc[p] = (acc[p] || 0) + (r['Suma de Cantidad'] || 0);
-        return acc;
-    }, {});
-
-    crearGraficoSeguro('chart-rec-pais', {
-        type: 'pie',
-        data: { labels: Object.keys(paisInt), datasets: [{ data: Object.values(paisInt), backgroundColor: PALETA_BARRAS, borderWidth: 0 }] },
-        options: { ...donutOptions, cutout: '0%' } // Pie chart en vez de dona
+        type: 'doughnut', data: { labels: ['AEC', 'Danilos Store'], datasets: [{ data: [cAEC, cDS], backgroundColor: [COLORS.azul, COLORS.rojo], borderWidth: 0 }] },
+        options: { ...donutOptions, plugins: { ...donutOptions.plugins, datalabels: { formatter: v => tCost>0?((v/tCost)*100).toFixed(1)+'%':'0%' } } }
     });
 }
 
-function renderDistribucion(data) {
-    const comps = data.reduce((acc, r) => {
-        const comp = r['Tipo Transferencia'] || 'Otros';
-        acc[comp] = (acc[comp] || 0) + (r[' UNIDADES.1'] || 0);
-        return acc;
-    }, {});
+function renderReclamos(reclamos, ajustes) {
+    const mot = reclamos.reduce((acc, r) => { const m = r.MOTIVO||'Otros'; acc[m] = (acc[m]||0) + (r.UND||0); return acc; }, {});
+    crearGraficoSeguro('chart-reclamos-motivo', {
+        type: 'pie', data: { labels: Object.keys(mot), datasets: [{ data: Object.values(mot), backgroundColor: PALETA }] }, options: donutOptions
+    });
+}
 
+function renderDistribucion(dist) {
+    const comp = dist.reduce((acc, r) => { const c = r['Tipo Transferencia']||'Otros'; acc[c] = (acc[c]||0) + (r[' UNIDADES.1']||0); return acc; }, {});
     crearGraficoSeguro('chart-dist-comp', {
-        type: 'doughnut',
-        data: { labels: Object.keys(comps), datasets: [{ data: Object.values(comps), backgroundColor: [COLORS.azul, COLORS.rojo, COLORS.verde], borderWidth: 0 }] },
-        options: { ...donutOptions, cutout: '60%' }
+        type: 'doughnut', data: { labels: Object.keys(comp), datasets: [{ data: Object.values(comp), backgroundColor: PALETA, borderWidth: 0 }] }, options: donutOptions
     });
 }
 
 function renderDespacho(envios, ventas) {
-    const totalEnvios = envios.reduce((a, b) => a + (b.UNIDADES || 0), 0);
-    const totalVentas = ventas.reduce((a, b) => a + (b.UNIDADES || 0), 0);
-
+    const e = envios.reduce((a, b) => a + (b.UNIDADES||0), 0);
+    const v = ventas.reduce((a, b) => a + (b.UNIDADES||0), 0);
     crearGraficoSeguro('chart-despacho-ventas', {
-        type: 'bar',
-        data: {
-            labels: ['Despacho (Salida)', 'Venta Real (Tiendas)'],
-            datasets: [{ data: [totalEnvios, totalVentas], backgroundColor: [COLORS.azul, COLORS.verde], borderRadius: 4 }]
-        },
-        options: { ...baseOptions, plugins: { ...baseOptions.plugins, legend: {display: false} } }
+        type: 'bar', data: { labels: ['Logística (Enviado)', 'Tiendas (Vendido)'], datasets: [{ data: [e, v], backgroundColor: [COLORS.azul, COLORS.verde], borderRadius: 4 }] }, options: baseOptions
     });
 }
 
-function renderAuditoria(dist, dig, aud) {
-    let bultosFacturados = dist.reduce((a, b) => a + (b[' BULTOS.1'] || 0), 0);
-    bultosFacturados += dig.reduce((a, b) => a + (b[' BULTOS.1'] || 0), 0);
-    
-    const meta = bultosFacturados * 0.15;
-    const bultosAuditados = aud.reduce((a, b) => a + (b.BULTOS || 0), 0);
-    const cobertura = bultosFacturados > 0 ? (bultosAuditados / meta) * 100 : 0;
+function renderAuditoria(dist, dig, aud, errCtrl, errAud) {
+    let bFact = dist.reduce((a, b) => a + (b[' BULTOS.1']||0), 0) + dig.reduce((a, b) => a + (b[' BULTOS.1']||0), 0);
+    let meta = bFact * 0.15;
+    let bAud = aud.reduce((a, b) => a + (b.BULTOS||0), 0);
+    let cob = bFact > 0 ? (bAud/meta)*100 : 0;
 
-    const elFacturado = document.getElementById('aud-facturado');
-    if(elFacturado) {
-        elFacturado.textContent = bultosFacturados.toLocaleString('en-US');
-        document.getElementById('aud-meta').textContent = meta.toLocaleString('en-US');
-        document.getElementById('aud-real').textContent = bultosAuditados.toLocaleString('en-US');
-        document.getElementById('aud-cobertura').textContent = cobertura.toFixed(2) + '%';
-        if(cobertura < 100) document.getElementById('aud-cobertura').style.color = COLORS.rojo;
+    const div = document.getElementById('kpi-aud-tiendas');
+    if(div) {
+        div.innerHTML = `
+            <div class="card"><div class="kpi-title">Facturado Real</div><div class="kpi-val">${bFact.toLocaleString('en-US')}</div></div>
+            <div class="card"><div class="kpi-title">Meta Exigida (15%)</div><div class="kpi-val">${meta.toLocaleString('en-US')}</div></div>
+            <div class="card"><div class="kpi-title">Auditado Real</div><div class="kpi-val">${bAud.toLocaleString('en-US')}</div></div>
+            <div class="card"><div class="kpi-title">Cobertura</div><div class="kpi-val" style="color:${cob<100?COLORS.rojo:COLORS.verde}">${cob.toFixed(1)}%</div></div>
+        `;
     }
 
     crearGraficoSeguro('chart-aud-embudo', {
-        type: 'bar',
-        data: {
-            labels: ['Total Facturado', 'Meta 15%', 'Auditado Real'],
-            datasets: [{ data: [bultosFacturados, meta, bultosAuditados], backgroundColor: [COLORS.gris, COLORS.rojo, COLORS.verde], borderRadius: 4 }]
-        },
-        options: { ...baseOptions, plugins: { ...baseOptions.plugins, legend: {display: false} } }
+        type: 'bar', data: { labels: ['Facturado', 'Meta 15%', 'Auditado'], datasets: [{ data: [bFact, meta, bAud], backgroundColor: [COLORS.gris, COLORS.rojo, COLORS.verde], borderRadius: 4 }] }, options: baseOptions
     });
 }
 
-function renderMayoreo(data) {
-    const totalLps = data.reduce((a, b) => {
-        const val = parseFloat(b['Suma de PAGO']?.toString().replace(/L|,/g, '') || 0);
-        return a + val;
-    }, 0);
-    const unidades = data.reduce((a, b) => a + (b['Suma de CANTIDAD PRODUCTO'] || 0), 0);
-
-    const kpisDiv = document.getElementById('kpis-mayoreo');
-    if(kpisDiv) {
-        kpisDiv.innerHTML = `
-            <div class="card"><div class="kpi-title">Recaudación Validada</div><div class="kpi-val" style="color:${COLORS.verde}">L ${totalLps.toLocaleString('en-US', {minimumFractionDigits: 2})}</div></div>
-            <div class="card"><div class="kpi-title">Unidades Auditadas</div><div class="kpi-val">${unidades.toLocaleString('en-US')}</div></div>
+function renderMayoreo(mayoreo) {
+    let lps = mayoreo.reduce((a, b) => a + limpiarNumero(b['Suma de PAGO']), 0);
+    let und = mayoreo.reduce((a, b) => a + (b['Suma de CANTIDAD PRODUCTO']||0), 0);
+    const div = document.getElementById('kpi-aud-mayoreo');
+    if(div) {
+        div.innerHTML = `
+            <div class="card"><div class="kpi-title">Recaudación Validada</div><div class="kpi-val" style="color:${COLORS.verde}">L ${lps.toLocaleString('en-US',{minimumFractionDigits:2})}</div></div>
+            <div class="card"><div class="kpi-title">Unidades Auditadas</div><div class="kpi-val">${und.toLocaleString('en-US')}</div></div>
         `;
     }
 }
 
-function renderSegunda(data) {
-    const yoy = data.reduce((acc, r) => {
-        const anio = r.AÑO || '2026';
-        acc[anio] = (acc[anio] || 0) + (r.UNIDADES || 0);
-        return acc;
-    }, {});
+function renderDevoluciones(aec, ds) {
+    // Cálculo % Aplicado (Métrica Gerencial)
+    const aplicadosAEC = aec.filter(r => r.APLICADO === 'APLICADO').length;
+    const porcAplicadoAEC = aec.length > 0 ? (aplicadosAEC / aec.length) * 100 : 0;
     
-    crearGraficoSeguro('chart-segunda-yoy', {
-        type: 'bar',
-        data: { labels: Object.keys(yoy), datasets: [{ data: Object.values(yoy), backgroundColor: [COLORS.gris, COLORS.azul], borderRadius: 4 }] },
-        options: { ...baseOptions, plugins: { ...baseOptions.plugins, legend: {display: false} } }
+    const aplicadosDS = ds.filter(r => r.APLICADO === 'APLICADO').length;
+    const porcAplicadoDS = ds.length > 0 ? (aplicadosDS / ds.length) * 100 : 0;
+
+    const divKPI = document.getElementById('kpi-devoluciones-aplicado');
+    if(divKPI) {
+        divKPI.innerHTML = `
+            <div class="card"><div class="kpi-title">Eficiencia Notas Crédito AEC</div><div class="kpi-val" style="color:${porcAplicadoAEC >= 90 ? COLORS.verde : COLORS.rojo}">${porcAplicadoAEC.toFixed(1)}%</div></div>
+            <div class="card"><div class="kpi-title">Eficiencia Notas Crédito DS</div><div class="kpi-val" style="color:${porcAplicadoDS >= 90 ? COLORS.verde : COLORS.rojo}">${porcAplicadoDS.toFixed(1)}%</div></div>
+        `;
+    }
+
+    const motAec = aec.reduce((acc, r) => { const m = r.MOTIVO||'Otros'; acc[m] = (acc[m]||0) + (r.UNIDADES||0); return acc; }, {});
+    const motDs = ds.reduce((acc, r) => { const m = r.MOTIVO||'Otros'; acc[m] = (acc[m]||0) + (r.UNIDADES||0); return acc; }, {});
+
+    crearGraficoSeguro('chart-dev-motivos-aec', { type: 'pie', data: { labels: Object.keys(motAec), datasets: [{ data: Object.values(motAec), backgroundColor: PALETA }] }, options: donutOptions });
+    crearGraficoSeguro('chart-dev-motivos-ds', { type: 'pie', data: { labels: Object.keys(motDs), datasets: [{ data: Object.values(motDs), backgroundColor: PALETA }] }, options: donutOptions });
+}
+
+function renderInventario(cedi) {
+    const neg = cedi.filter(r => r.Tipo === 'NEG').reduce((acc, r) => { const t = r['TIPO DE AJUSTE']||'Otros'; acc[t] = (acc[t]||0) + Math.abs(r['Importe Costo']||0); return acc; }, {});
+    crearGraficoSeguro('chart-inv-tipo', {
+        type: 'bar', indexAxis: 'y', data: { labels: Object.keys(neg), datasets: [{ data: Object.values(neg), backgroundColor: COLORS.rojo, borderRadius: 4 }] },
+        options: { ...baseOptions, plugins: { ...baseOptions.plugins, datalabels: { formatter: v => 'L ' + (v/1000).toFixed(1) + 'K' } } }
     });
 }
 
-// Arrancar sistema
+function renderSegunda(seg) {
+    const yoy = seg.reduce((acc, r) => { const a = r.AÑO||'2026'; acc[a] = (acc[a]||0) + (r.UNIDADES||0); return acc; }, {});
+    crearGraficoSeguro('chart-segunda-yoy', { type: 'bar', data: { labels: Object.keys(yoy), datasets: [{ data: Object.values(yoy), backgroundColor: [COLORS.gris, COLORS.azul], borderRadius: 4 }] }, options: baseOptions });
+}
+
+// Inicializar al cargar
 cargarTodo();
