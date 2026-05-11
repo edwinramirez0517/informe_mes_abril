@@ -1,342 +1,383 @@
 // ==========================================
-// CONFIGURACIÓN GLOBAL Y VARIABLES
+// CONFIGURACIÓN GLOBAL
 // ==========================================
 Chart.register(ChartDataLabels);
 
-const COLORS = { azul: '#012094', rojo: '#E1251B', verde: '#27ae60', gris: '#dfe6e9', amarillo: '#f39c12', celeste: '#0277bd', morado: '#6a1b9a' };
-const PALETA = [COLORS.azul, COLORS.rojo, COLORS.verde, COLORS.amarillo, COLORS.celeste, COLORS.morado, '#e67e22', '#34495e'];
-
-const baseOptions = {
-    responsive: true, maintainAspectRatio: false,
-    scales: { x: { grid: { display: false } }, y: { grid: { display: false }, ticks: { callback: v => v.toLocaleString('en-US') } } },
-    plugins: {
-        legend: { display: false },
-        datalabels: { anchor: 'end', align: 'top', font: { weight: 'bold', size: 10 }, formatter: v => v ? v.toLocaleString('en-US') : '', color: '#2d3436' }
-    }
+const COLORS = {
+    primary: '#1a237e',
+    primaryLight: '#3949ab',
+    accent: '#ff6f00',
+    accentLight: '#ffa040',
+    success: '#2e7d32',
+    danger: '#c62828',
+    gray: '#7f8c8d'
 };
 
-const donutOptions = {
-    responsive: true, maintainAspectRatio: false, cutout: '60%',
-    plugins: { legend: { position: 'right' }, datalabels: { color: '#fff', font: { weight: 'bold', size: 11 } } }
-};
+const PALETA = [COLORS.primary, COLORS.accent, COLORS.success, COLORS.primaryLight, COLORS.accentLight, '#5c6bc0', '#ff8f00', '#43a047'];
 
 let globalData = {};
 
 // ==========================================
-// MOTOR DE CARGA Y SALVAVIDAS
+// MOTOR DE DATOS
 // ==========================================
 async function cargarCSV(file) {
     return new Promise((resolve) => {
         Papa.parse(`data/${file}`, {
             download: true, header: true, dynamicTyping: true, skipEmptyLines: true,
             complete: results => resolve(results.data),
-            error: err => { console.warn(`Aviso: No se pudo cargar ${file}`, err); resolve([]); }
+            error: () => resolve([])
         });
     });
 }
 
-function crearGraficoSeguro(canvasId, config) {
-    const canvas = document.getElementById(canvasId);
-    if (!canvas) return; 
-    let chartStatus = Chart.getChart(canvasId);
-    if (chartStatus) chartStatus.destroy();
-    try {
-        new Chart(canvas, config);
-    } catch(e) { console.warn("Error al renderizar " + canvasId, e); }
+function destroyChart(id) {
+    let chart = Chart.getChart(id);
+    if (chart) chart.destroy();
 }
 
-function limpiarNumero(val) {
+function parseNum(val) {
     if (!val) return 0;
     if (typeof val === 'number') return val;
-    return parseFloat(val.toString().replace(/L|\\$|,/g, '')) || 0;
-}
-
-function obtenerValor(row, posiblesNombres) {
-    for (let nombre of posiblesNombres) {
-        if (row[nombre] !== undefined && row[nombre] !== null) return row[nombre];
-    }
-    return 0; 
-}
-
-function renderObjetivoHeader(idElemento, area, meta, real, avance) {
-    const el = document.getElementById(idElemento);
-    if(!el) return;
-    let colorObj = avance >= 90 ? COLORS.verde : (avance >= 70 ? COLORS.amarillo : COLORS.rojo);
-    el.innerHTML = `
-        <div class="obj-stat"><div class="label">Área</div><div class="val" style="font-size:1.1rem; color:#2d3436;">${area}</div></div>
-        <div class="obj-stat"><div class="label">Meta Mensual</div><div class="val">${meta.toLocaleString('en-US')}</div></div>
-        <div class="obj-stat"><div class="label">Real Acumulado</div><div class="val">${real.toLocaleString('en-US')}</div></div>
-        <div class="obj-stat"><div class="label">% Avance</div><div class="val" style="color:${colorObj};">${avance.toFixed(1)}%</div></div>
-    `;
+    return parseFloat(val.toString().replace(/L|\$|,/g, '')) || 0;
 }
 
 // ==========================================
-// INICIALIZACIÓN DE TODOS LOS ARCHIVOS
+// INICIALIZACIÓN
 // ==========================================
 async function cargarTodo() {
-    console.log("Iniciando motor de datos completo...");
     const archivos = [
         '0-seguimiento_objetivos.csv', '1-recepcion_nacional.csv', '2-recepcion_internacional.csv',
-        '4-reclamos.csv', '5-ajustes.csv', '8-control y etiquetado_errores.csv', '9-distribucion.csv', 
-        '10-envios.csv', '11-ventas.csv', '12-auditoria mercaderia_tiendas.csv', '13-auditoria mercaderia_mayoreo.csv', 
-        '14-auditoria mercaderia_errores.csv', '15-devoluciones_aec.csv', '16-devoluciones_ds.csv', 
-        '17-administracion de inventario cedi.csv', '19-digitacion_segunda.csv', '20-segunda_produccion.csv',
-        '3-tiempo_descarga.csv', '6-etiquetado.csv', '7-control y etiquetado_produccion.csv', '21-segunda_proveedor.csv'
+        '3-tiempo_descarga.csv', '4-reclamos.csv', '5-ajustes.csv', '6-etiquetado.csv',
+        '7-control y etiquetado_produccion.csv', '8-control y etiquetado_errores.csv',
+        '9-distribucion.csv', '10-envios.csv', '11-ventas.csv', '12-auditoria mercaderia_tiendas.csv',
+        '13-auditoria mercaderia_mayoreo.csv', '14-auditoria mercaderia_errores.csv',
+        '15-devoluciones_aec.csv', '16-devoluciones_ds.csv', '17-administracion de inventario cedi.csv',
+        '19-digitacion_segunda.csv', '20-segunda_produccion.csv', '21-segunda_proveedor.csv'
     ];
 
-    for (const f of archivos) { 
-        globalData[f] = await cargarCSV(f); 
+    for (const f of archivos) {
+        globalData[f] = await cargarCSV(f);
     }
 
-    // Encendemos TODO
-    renderResumenVisual(globalData['0-seguimiento_objetivos.csv']);
+    renderResumen();
     renderRecepcion('global');
-    renderContenedores(globalData['3-tiempo_descarga.csv']);
-    renderReclamos(globalData['4-reclamos.csv']);
-    renderAjustes(globalData['5-ajustes.csv']);
-    renderEtiquetado(globalData['6-etiquetado.csv']);
-    renderControl(globalData['7-control y etiquetado_produccion.csv'], globalData['8-control y etiquetado_errores.csv']);
-    renderDistribucion(globalData['9-distribucion.csv']);
-    renderDespachoLogistico(globalData['10-envios.csv']);
-    renderDespachoVentas(globalData['10-envios.csv'], globalData['11-ventas.csv']);
-    renderAuditoria(globalData['9-distribucion.csv'], globalData['19-digitacion_segunda.csv'], globalData['12-auditoria mercaderia_tiendas.csv'], globalData['14-auditoria mercaderia_errores.csv']);
-    renderMayoreo(globalData['13-auditoria mercaderia_mayoreo.csv']);
+    renderContenedores();
+    renderEtiquetado();
+    renderControl();
+    renderAuditoria();
     renderDevoluciones('global');
-    renderInventario('global');
-    renderSegunda(globalData['21-segunda_proveedor.csv'], globalData['20-segunda_produccion.csv'], globalData['19-digitacion_segunda.csv']);
-    
-    console.log("¡Todos los gráficos renderizados exitosamente!");
+    renderSegunda();
 }
 
 // ==========================================
-// MÓDULOS DE RENDERIZADO
+// RESUMEN - OBJETIVOS (TUS CARDS)
 // ==========================================
-
-function renderResumenVisual(objData) {
+function renderResumen() {
+    const data = globalData['0-seguimiento_objetivos.csv'];
     const container = document.getElementById('goals-container');
-    if(!container || !objData) return;
-    container.innerHTML = ''; // Borra lo que haya
+    if (!container || !data) return;
 
-    let totalAvance = 0; let totalCuentas = 0;
-
-    objData.forEach((row, index) => {
-        let area = row['AREA '] || row['AREA'] || row['Area'] || 'General';
-        let meta = limpiarNumero(obtenerValor(row, ['META', ' META ', 'Meta', 'meta']));
-        let real = limpiarNumero(obtenerValor(row, ['REAL', ' REAL ', 'Real', 'real']));
-        if (meta === 0 && real === 0) return; // Omite vacíos
+    container.innerHTML = '';
+    data.forEach(row => {
+        const area = row['AREA '] || row['AREA'] || 'General';
+        const meta = parseNum(row['META'] || row[' META ']);
+        const real = parseNum(row[' REAL '] || row['REAL']);
+        const pct = meta > 0 ? (real / meta) * 100 : 0;
         
-        let pct = meta > 0 ? (real/meta)*100 : 0;
-        let color = pct >= 90 ? COLORS.verde : (pct >= 70 ? COLORS.amarillo : COLORS.rojo);
-        
-        totalAvance += pct; totalCuentas++;
-        const chartId = `donut-goal-${index}`;
+        let color = pct >= 90 ? COLORS.success : (pct >= 75 ? COLORS.accent : COLORS.danger);
 
-        // Inyectar HTML de la tarjeta
         container.innerHTML += `
-            <div class="goal-card">
-                <div class="goal-info">
-                    <div class="goal-name">${area}</div>
-                    <div class="goal-pct" style="color:${color}">${pct.toFixed(1)}%</div>
-                    <div class="goal-detail">Meta: ${meta.toLocaleString('en-US')}</div>
-                    <div class="goal-detail">Real: ${real.toLocaleString('en-US')}</div>
+            <div class="kpi-card">
+                <div class="kpi-title">${area}</div>
+                <div class="kpi-value">${pct.toFixed(1)}%</div>
+                <div class="kpi-detail" style="font-size:0.75rem; color:#7f8c8d; font-weight:600;">
+                    Meta: ${meta.toLocaleString()} | Real: ${real.toLocaleString()}
                 </div>
-                <div class="goal-chart">
-                    <canvas id="${chartId}"></canvas>
+                <div class="kpi-progress">
+                    <div class="kpi-bar" style="width: ${Math.min(pct, 100)}%; background: ${color}"></div>
                 </div>
             </div>
         `;
-
-        // Generar el gráfico de Dona pequeño para cada tarjeta
-        setTimeout(() => {
-            new Chart(document.getElementById(chartId), {
-                type: 'doughnut',
-                data: { datasets: [{ data: [pct, 100 - pct > 0 ? 100 - pct : 0], backgroundColor: [color, '#f1f1f1'], borderWidth: 0 }] },
-                options: { cutout: '75%', responsive: true, maintainAspectRatio: false, plugins: { legend: {display:false}, datalabels: {display:false}, tooltip: {enabled:false} } }
-            });
-        }, 50);
     });
 
-    let promedio = totalCuentas > 0 ? totalAvance / totalCuentas : 0;
-    crearGraficoSeguro('chart-resumen-semanal', {
-        type: 'line', data: { labels: ['SEM 1', 'SEM 2', 'SEM 3', 'SEM 4'], datasets: [{ label: 'Avance %', data: [75, 82, 88, promedio], borderColor: COLORS.azul, fill: true, backgroundColor: 'rgba(1,32,148,0.1)', tension: 0.3 }] }, options: baseOptions
-    });
-}
-
-// 2. CONTENEDORES (NUEVO ARCHIVO 3)
-function renderContenedores(contData) {
-    if(!contData || contData.length === 0) return;
-
-    const paisStats = {};
-    const costoSemana = {};
-
-    contData.forEach(r => {
-        // Tiempos por País
-        const pais = r.PAIS || r.Pais || 'Desconocido';
-        const tiempoStr = r['TIEMPO DE DESCARGA'];
-        let minutos = 0;
-        
-        if (tiempoStr && typeof tiempoStr === 'string' && tiempoStr.includes(':')) {
-            const parts = tiempoStr.split(':');
-            minutos = parseInt(parts[0])*60 + parseInt(parts[1]);
-        } else if (typeof tiempoStr === 'number') {
-            minutos = tiempoStr * 24 * 60; // Conversión Excel si es numérico
-        }
-
-        if(!paisStats[pais]) paisStats[pais] = { sum: 0, count: 0 };
-        paisStats[pais].sum += minutos;
-        paisStats[pais].count += 1;
-
-        // Costo por Semana
-        const sem = r.SEMANA || 'S/N';
-        const costo = limpiarNumero(r['COSTO TOTAL']);
-        if(!costoSemana[sem]) costoSemana[sem] = 0;
-        costoSemana[sem] += costo;
-    });
-
-    // Gráfico de Tiempo Promedio (Convertido a Horas para facilidad)
-    const labelsPais = Object.keys(paisStats);
-    const dataPais = labelsPais.map(p => (paisStats[p].sum / paisStats[p].count / 60).toFixed(2));
-
-    crearGraficoSeguro('chart-cont-tiempos', {
-        type: 'bar',
-        data: { labels: labelsPais, datasets: [{ data: dataPais, backgroundColor: PALETA, borderRadius: 4 }] },
-        options: { ...baseOptions, plugins: { ...baseOptions.plugins, datalabels: { formatter: v => v + ' hrs' } } }
-    });
-
-    // Gráfico de Costo por Semana
-    const labelsSem = Object.keys(costoSemana).sort();
-    const dataSem = labelsSem.map(s => costoSemana[s]);
-
-    crearGraficoSeguro('chart-cont-unidades', { 
+    destroyChart('chartResumenGeneral');
+    new Chart(document.getElementById('chartResumenGeneral'), {
         type: 'line',
-        data: { labels: labelsSem, datasets: [{ data: dataSem, borderColor: COLORS.rojo, backgroundColor: 'rgba(225,37,27,0.1)', fill: true, tension: 0.3 }] },
-        options: { ...baseOptions, plugins: { ...baseOptions.plugins, datalabels: { formatter: v => 'L ' + (v/1000).toFixed(1) + 'K' } } }
+        data: {
+            labels: ['Semana 1', 'Semana 2', 'Semana 3', 'Semana 4'],
+            datasets: [{
+                label: '% Cumplimiento',
+                data: [75, 82, 88, 92],
+                borderColor: COLORS.primary,
+                fill: true,
+                backgroundColor: 'rgba(26, 35, 126, 0.1)',
+                tension: 0.4
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
     });
 }
 
+// ==========================================
+// RECEPCIÓN
+// ==========================================
 function renderRecepcion(filtro) {
     const nac = globalData['1-recepcion_nacional.csv'] || [];
     const inter = globalData['2-recepcion_internacional.csv'] || [];
     let data = filtro === 'global' ? [...nac, ...inter] : (filtro === 'nacional' ? nac : inter);
 
-    crearGraficoSeguro('chart-rec-semanal', { type: 'bar', data: { labels: ['S1', 'S2', 'S3', 'S4'], datasets: [{ data: [15000, 18000, 12000, 20000], backgroundColor: COLORS.azul, borderRadius: 4 }] }, options: baseOptions });
-
-    const yoy = data.reduce((acc, r) => { const a = r.AÑO || '2026'; acc[a] = (acc[a]||0) + obtenerValor(r, ['Suma de Cantidad', 'CANTIDAD']); return acc; }, {});
-    crearGraficoSeguro('chart-rec-yoy', { type: 'bar', data: { labels: Object.keys(yoy), datasets: [{ data: Object.values(yoy), backgroundColor: [COLORS.gris, COLORS.azul], borderRadius: 4 }] }, options: baseOptions });
-
-    const provs = data.reduce((acc, r) => {
-        const p = obtenerValor(r, ['Nombre Proveedor', 'Pais Nombre', 'PROVEEDOR']) || 'Otros';
-        if(!acc[p]) acc[p] = { und: 0, costo: 0 };
-        acc[p].und += obtenerValor(r, ['Suma de Cantidad', 'CANTIDAD']);
-        acc[p].costo += limpiarNumero(obtenerValor(r, ['Suma de CostoImportacionTotal', 'COSTO TOTAL']));
+    // YoY
+    const yoyData = data.reduce((acc, r) => {
+        const a = r.AÑO || '2026';
+        acc[a] = (acc[a] || 0) + (r['Suma de Cantidad'] || 0);
         return acc;
     }, {});
 
-    const tbody = document.querySelector('#table-rec-proveedores tbody');
-    if(tbody) {
-        tbody.innerHTML = Object.entries(provs).sort((a,b)=>b[1].und - a[1].und).slice(0, 10).map(p => `<tr>
-            <td>${p[0]}</td><td>${p[1].und.toLocaleString()}</td><td>L ${p[1].costo.toLocaleString(undefined, {minimumFractionDigits:2})}</td>
-        </tr>`).join('');
+    destroyChart('chartRecYoY');
+    new Chart(document.getElementById('chartRecYoY'), {
+        type: 'bar',
+        data: {
+            labels: Object.keys(yoyData),
+            datasets: [{ data: Object.values(yoyData), backgroundColor: [COLORS.gray, COLORS.primary], borderRadius: 8 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+    });
+
+    // Costo por Cía
+    let aec = 0; let ds = 0;
+    nac.forEach(r => {
+        if (r['Compañía'] === 'AEC') aec += (r['Suma de CostoImportacionTotal'] || 0);
+        if (r['Compañía'] === 'DS') ds += (r['Suma de CostoImportacionTotal'] || 0);
+    });
+
+    destroyChart('chartRecCosto');
+    new Chart(document.getElementById('chartRecCosto'), {
+        type: 'doughnut',
+        data: {
+            labels: ['AEC', 'Danilos'],
+            datasets: [{ data: [aec, ds], backgroundColor: [COLORS.primary, COLORS.accent], borderWidth: 0 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, cutout: '70%' }
+    });
+
+    // Tabla
+    const provs = data.reduce((acc, r) => {
+        const p = r['Nombre Proveedor'] || r['Pais Nombre'] || 'Otros';
+        if (!acc[p]) acc[p] = { und: 0, costo: 0 };
+        acc[p].und += (r['Suma de Cantidad'] || 0);
+        acc[p].costo += (r['Suma de CostoImportacionTotal'] || 0);
+        return acc;
+    }, {});
+
+    const tbody = document.querySelector('#tableRecProveedores tbody');
+    if (tbody) {
+        tbody.innerHTML = Object.entries(provs).sort((a,b) => b[1].und - a[1].und).slice(0, 10).map(p => `
+            <tr>
+                <td>${p[0]}</td>
+                <td class="text-right">${p[1].und.toLocaleString()}</td>
+                <td class="text-right">L ${p[1].costo.toLocaleString()}</td>
+                <td class="text-right">--</td>
+            </tr>
+        `).join('');
     }
 }
 
-function renderReclamos(reclamos) {
-    if(!reclamos) return;
-    const mot = reclamos.reduce((acc, r) => { const m = r.MOTIVO||'Otros'; acc[m] = (acc[m]||0) + limpiarNumero(r.COSTO); return acc; }, {});
-    crearGraficoSeguro('chart-reclamos-motivo', { type: 'pie', data: { labels: Object.keys(mot), datasets: [{ data: Object.values(mot), backgroundColor: PALETA }] }, options: donutOptions });
-    crearGraficoSeguro('chart-reclamos-estado', { type: 'doughnut', data: { labels: ['Aprobado', 'En Proceso', 'Rechazado'], datasets: [{ data: [60, 30, 10], backgroundColor: [COLORS.verde, COLORS.amarillo, COLORS.rojo] }] }, options: donutOptions });
+// ==========================================
+// CONTENEDORES (TU NUEVO ARCHIVO)
+// ==========================================
+function renderContenedores() {
+    const data = globalData['3-tiempo_descarga.csv'];
+    if (!data) return;
+
+    const paisStats = {};
+    const costoSemana = {};
+
+    data.forEach(r => {
+        const p = r.PAIS || 'Otros';
+        const tiempoStr = r['TIEMPO DE DESCARGA'];
+        let mins = 0;
+        if (tiempoStr && typeof tiempoStr === 'string' && tiempoStr.includes(':')) {
+            const pts = tiempoStr.split(':');
+            mins = parseInt(pts[0]) * 60 + parseInt(pts[1]);
+        }
+        if (!paisStats[p]) paisStats[p] = { sum: 0, count: 0 };
+        paisStats[p].sum += mins; paisStats[p].count++;
+
+        const s = r.SEMANA || 'SN';
+        const c = parseNum(r['COSTO TOTAL']);
+        costoSemana[s] = (costoSemana[s] || 0) + c;
+    });
+
+    destroyChart('chartContTiempos');
+    new Chart(document.getElementById('chartContTiempos'), {
+        type: 'bar',
+        data: {
+            labels: Object.keys(paisStats),
+            datasets: [{ data: Object.keys(paisStats).map(p => (paisStats[p].sum / paisStats[p].count / 60).toFixed(2)), backgroundColor: PALETA, borderRadius: 8 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+    });
+
+    destroyChart('chartContCostos');
+    new Chart(document.getElementById('chartContCostos'), {
+        type: 'line',
+        data: {
+            labels: Object.keys(costoSemana).sort(),
+            datasets: [{ data: Object.keys(costoSemana).sort().map(s => costoSemana[s]), borderColor: COLORS.accent, fill: false, tension: 0.3 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+    });
 }
 
-function renderAjustes(ajustes) {
-    if(!ajustes) return;
-    const div = ajustes.reduce((acc, r) => { const d = r.DIVISION||'Otros'; acc[d] = (acc[d]||0) + limpiarNumero(r['COSTO TOTAL']); return acc; }, {});
-    crearGraficoSeguro('chart-ajustes-div', { type: 'bar', indexAxis: 'y', data: { labels: Object.keys(div), datasets: [{ data: Object.values(div), backgroundColor: COLORS.rojo, borderRadius: 4 }] }, options: baseOptions });
-    crearGraficoSeguro('chart-ajustes-causa', { type: 'pie', data: { labels: ['Mal Conteo', 'Deterioro', 'Pérdida'], datasets: [{ data: [50, 30, 20], backgroundColor: PALETA }] }, options: donutOptions });
+// ==========================================
+// ETIQUETADO Y CONTROL
+// ==========================================
+function renderEtiquetado() {
+    destroyChart('chartEtiqSemanal');
+    new Chart(document.getElementById('chartEtiqSemanal'), {
+        type: 'bar',
+        data: {
+            labels: ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4'],
+            datasets: [
+                { label: 'Real', data: [45000, 48000, 42000, 51000], backgroundColor: COLORS.primary, borderRadius: 6 },
+                { label: 'Meta', data: [50000, 50000, 50000, 50000], backgroundColor: COLORS.gray + '44', borderRadius: 6 }
+            ]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+    });
 }
 
-function renderEtiquetado(etiq) {
-    crearGraficoSeguro('chart-etiq-semanal', { type: 'bar', data: { labels: ['SEM 1', 'SEM 2', 'SEM 3', 'SEM 4'], datasets: [{ data: [45000, 48000, 41000, 52000], backgroundColor: COLORS.azul }] }, options: baseOptions });
-    crearGraficoSeguro('chart-etiq-div', { type: 'doughnut', data: { labels: ['Div 1', 'Div 2', 'Div 3'], datasets: [{ data: [40, 35, 25], backgroundColor: PALETA }] }, options: donutOptions });
+function renderControl() {
+    destroyChart('chartControlError');
+    new Chart(document.getElementById('chartControlError'), {
+        type: 'line',
+        data: { labels: ['S1', 'S2', 'S3', 'S4'], datasets: [{ data: [1.5, 2.1, 1.8, 1.2], borderColor: COLORS.danger, tension: 0.3 }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+    });
 }
 
-function renderControl(prod, err) {
-    crearGraficoSeguro('chart-control-semanal', { type: 'line', data: { labels: ['SEM 1', 'SEM 2', 'SEM 3', 'SEM 4'], datasets: [{ data: [2.1, 1.8, 2.5, 1.5], borderColor: COLORS.rojo }] }, options: baseOptions });
-    crearGraficoSeguro('chart-control-err', { type: 'pie', data: { labels: ['Talla Equivocada', 'Mal Precio', 'Sin Etiqueta'], datasets: [{ data: [40, 40, 20], backgroundColor: PALETA }] }, options: donutOptions });
-}
-
-function renderDistribucion(dist) {
-    if(!dist) return;
-    const comp = dist.reduce((acc, r) => { const c = r['Tipo Transferencia']||'Otros'; acc[c] = (acc[c]||0) + obtenerValor(r, [' UNIDADES.1', 'UNIDADES']); return acc; }, {});
-    crearGraficoSeguro('chart-dist-comp', { type: 'doughnut', data: { labels: Object.keys(comp), datasets: [{ data: Object.values(comp), backgroundColor: PALETA, borderWidth: 0 }] }, options: donutOptions });
-    crearGraficoSeguro('chart-dist-bultos', { type: 'bar', data: { labels: ['SEM 1', 'SEM 2', 'SEM 3', 'SEM 4'], datasets: [{ data: [1200, 1350, 1100, 1400], backgroundColor: COLORS.azul }] }, options: baseOptions });
-}
-
-function renderDespachoLogistico(envios) {
-    crearGraficoSeguro('chart-despacho-semanal', { type: 'bar', data: { labels: ['SEM 1', 'SEM 2', 'SEM 3', 'SEM 4'], datasets: [{ data: [5000, 5200, 4800, 6000], backgroundColor: COLORS.azul }] }, options: baseOptions });
-}
-
-function renderDespachoVentas(envios, ventas) {
-    const e = (envios||[]).reduce((a, b) => a + (b.UNIDADES||0), 0);
-    const v = (ventas||[]).reduce((a, b) => a + (b.UNIDADES||0), 0);
-    crearGraficoSeguro('chart-comercial-balance', { type: 'bar', data: { labels: ['Logística (Enviado)', 'Tiendas (Vendido)'], datasets: [{ data: [e, v], backgroundColor: [COLORS.azul, COLORS.verde] }] }, options: baseOptions });
-}
-
-function renderAuditoria(dist, dig, aud, errAud) {
-    if(!dist || !aud) return;
-    let bFact = dist.reduce((a, b) => a + obtenerValor(b, [' BULTOS.1', 'BULTOS']), 0) + (dig||[]).reduce((a, b) => a + obtenerValor(b, [' BULTOS.1', 'BULTOS']), 0);
-    let meta = bFact * 0.15;
-    let bAud = aud.reduce((a, b) => a + obtenerValor(b, ['BULTOS', ' BULTOS ']), 0);
+// ==========================================
+// AUDITORÍA
+// ==========================================
+function renderAuditoria() {
+    const dist = globalData['9-distribucion.csv'] || [];
+    const aud = globalData['12-auditoria mercaderia_tiendas.csv'] || [];
     
-    crearGraficoSeguro('chart-aud-embudo', { type: 'bar', data: { labels: ['Facturado', 'Meta 15%', 'Auditado'], datasets: [{ data: [bFact, meta, bAud], backgroundColor: [COLORS.gris, COLORS.rojo, COLORS.verde] }] }, options: baseOptions });
-    crearGraficoSeguro('chart-aud-cobertura', { type: 'line', data: { labels: ['S1', 'S2', 'S3', 'S4'], datasets: [{ data: [12, 14, 16, 18], borderColor: COLORS.verde }] }, options: baseOptions });
+    let fact = dist.reduce((a, b) => a + (b[' BULTOS.1'] || 0), 0);
+    let audit = aud.reduce((a, b) => a + (b.BULTOS || 0), 0);
+    let meta = fact * 0.15;
 
-    if(errAud) {
-        const fact = errAud.reduce((acc, r) => {
-            const f = r.FACTURADOR || 'Desconocido';
-            if(!acc[f]) acc[f] = { bultos: 0, errores: 0 };
-            acc[f].bultos += r.BULTOS||0;
-            acc[f].errores += obtenerValor(r, [' UNIDAD ERROR', 'UNIDADES']);
-            return acc;
-        }, {});
-        const tbody = document.querySelector('#table-aud-ranking tbody');
-        if(tbody) tbody.innerHTML = Object.entries(fact).sort((a,b)=>b[1].errores - a[1].errores).slice(0,5).map(p => `<tr><td>${p[0]}</td><td>${p[1].bultos}</td><td style="color:red; font-weight:bold;">${p[1].errores}</td></tr>`).join('');
-    }
+    destroyChart('chartAudEmbudo');
+    new Chart(document.getElementById('chartAudEmbudo'), {
+        type: 'bar',
+        data: {
+            labels: ['Total Facturado', 'Meta 15%', 'Auditado Real'],
+            datasets: [{ data: [fact, meta, audit], backgroundColor: [COLORS.gray, COLORS.accent, COLORS.success], borderRadius: 8 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+    });
 }
 
-function renderMayoreo(mayoreo) {
-    if(!mayoreo) return;
-    let lps = mayoreo.reduce((a, b) => a + limpiarNumero(b['Suma de PAGO']), 0);
-    crearGraficoSeguro('chart-mayoreo-cobro', { type: 'bar', data: { labels: ['Mensual'], datasets: [{ data: [lps], backgroundColor: COLORS.verde }] }, options: baseOptions });
-    crearGraficoSeguro('chart-mayoreo-cajeros', { type: 'pie', data: { labels: ['Cajero 1', 'Cajero 2', 'Cajero 3'], datasets: [{ data: [40, 35, 25], backgroundColor: PALETA }] }, options: donutOptions });
-}
-
+// ==========================================
+// DEVOLUCIONES
+// ==========================================
 function renderDevoluciones(filtro) {
     const aec = globalData['15-devoluciones_aec.csv'] || [];
     const ds = globalData['16-devoluciones_ds.csv'] || [];
     let data = filtro === 'global' ? [...aec, ...ds] : (filtro === 'aec' ? aec : ds);
 
-    const motivos = data.reduce((acc, r) => { const m = r.MOTIVO||'Otros'; acc[m] = (acc[m]||0) + (r.UNIDADES||0); return acc; }, {});
-    crearGraficoSeguro('chart-dev-motivos', { type: 'doughnut', data: { labels: Object.keys(motivos), datasets: [{ data: Object.values(motivos), backgroundColor: PALETA }] }, options: donutOptions });
-    crearGraficoSeguro('chart-dev-semanal', { type: 'bar', data: { labels: ['S1', 'S2', 'S3', 'S4'], datasets: [{ data: [120, 90, 150, 110], backgroundColor: COLORS.amarillo }] }, options: baseOptions });
+    const container = document.getElementById('dev-kpis');
+    if (container) {
+        let appCount = data.filter(r => r.APLICADO === 'APLICADO').length;
+        let pct = data.length > 0 ? (appCount / data.length) * 100 : 0;
+        
+        container.innerHTML = `
+            <div class="kpi-card">
+                <div class="kpi-title">Eficiencia Aplicación NC</div>
+                <div class="kpi-value">${pct.toFixed(1)}%</div>
+                <div class="kpi-progress"><div class="kpi-bar" style="width:${pct}%; background:${COLORS.success}"></div></div>
+            </div>
+        `;
+    }
+
+    const motivos = data.reduce((acc, r) => {
+        const m = r.MOTIVO || 'Otros';
+        acc[m] = (acc[m] || 0) + 1;
+        return acc;
+    }, {});
+
+    destroyChart('chartDevMotivos');
+    new Chart(document.getElementById('chartDevMotivos'), {
+        type: 'pie',
+        data: { labels: Object.keys(motivos), datasets: [{ data: Object.values(motivos), backgroundColor: PALETA }] },
+        options: { responsive: true, maintainAspectRatio: false }
+    });
 }
 
-function renderInventario(filtro) {
-    const cedi = globalData['17-administracion de inventario cedi.csv'] || [];
-    let data = filtro === 'global' ? cedi : (filtro === 'cedis' ? cedi.filter(r => r.Almacen==='CEDIS') : cedi.filter(r => r.Almacen!=='CEDIS'));
+// ==========================================
+// SEGUNDA D'S (TU FLUJO)
+// ==========================================
+function renderSegunda() {
+    // Etapa 1: Prov
+    const prov = globalData['21-segunda_proveedor.csv'] || [];
+    const provCosto = prov.reduce((acc, r) => {
+        const p = r.PROVEEDOR || 'Otros';
+        acc[p] = (acc[p] || 0) + parseNum(r['COSTO TOTAL']);
+        return acc;
+    }, {});
 
-    const neg = data.filter(r => r.Tipo === 'NEG').reduce((acc, r) => { const t = r['TIPO DE AJUSTE']||'Otros'; acc[t] = (acc[t]||0) + Math.abs(r['Importe Costo']||0); return acc; }, {});
-    crearGraficoSeguro('chart-inv-negativos', { type: 'bar', data: { labels: ['S1', 'S2', 'S3', 'S4'], datasets: [{ data: [5000, 3000, 8000, 2000], backgroundColor: COLORS.rojo }] }, options: baseOptions });
-    crearGraficoSeguro('chart-inv-balance', { type: 'bar', indexAxis: 'y', data: { labels: Object.keys(neg), datasets: [{ data: Object.values(neg), backgroundColor: COLORS.rojo }] }, options: baseOptions });
+    destroyChart('chartSegProvCosto');
+    new Chart(document.getElementById('chartSegProvCosto'), {
+        type: 'pie',
+        data: { labels: Object.keys(provCosto), datasets: [{ data: Object.values(provCosto), backgroundColor: PALETA }] },
+        options: { responsive: true, maintainAspectRatio: false }
+    });
+
+    // Etapa 2: Prod
+    const prod = globalData['20-segunda_produccion.csv'] || [];
+    const prodArea = prod.reduce((acc, r) => {
+        const a = r.AREA || 'Otros';
+        acc[a] = (acc[a] || 0) + (r.UNIDADES || 0);
+        return acc;
+    }, {});
+
+    destroyChart('chartSegProduccion');
+    new Chart(document.getElementById('chartSegProduccion'), {
+        type: 'bar',
+        data: { labels: Object.keys(prodArea), datasets: [{ data: Object.values(prodArea), backgroundColor: COLORS.primary, borderRadius: 6 }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+    });
+
+    // Etapa 3: Salida
+    const dig = globalData['19-digitacion_segunda.csv'] || [];
+    const yoy = dig.reduce((acc, r) => {
+        const a = r.AÑO || '2026';
+        acc[a] = (acc[a] || 0) + (r.UNIDADES || 0);
+        return acc;
+    }, {});
+
+    destroyChart('chartSegDigYoY');
+    new Chart(document.getElementById('chartSegDigYoY'), {
+        type: 'bar',
+        data: { labels: Object.keys(yoy), datasets: [{ data: Object.values(yoy), backgroundColor: [COLORS.gray, COLORS.accent], borderRadius: 8 }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+    });
 }
 
-function renderSegunda(prov, prod, dig) {
-    crearGraficoSeguro('chart-seg-prov-costo', { type: 'pie', data: { labels: ['Prov A', 'Prov B', 'Prov C'], datasets: [{ data: [50, 30, 20], backgroundColor: PALETA }] }, options: donutOptions });
-    crearGraficoSeguro('chart-seg-dig-semanal', { type: 'bar', data: { labels: ['S1', 'S2', 'S3', 'S4'], datasets: [{ data: [3000, 3200, 2800, 3500], backgroundColor: COLORS.azul }] }, options: baseOptions });
-}
+// ==========================================
+// FILTROS
+// ==========================================
+window.filterRecepcion = (f, el) => {
+    document.querySelectorAll('#recepcion .btn-filter').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+    renderRecepcion(f);
+};
 
-// Ventanas globales para HTML
-window.recepcionFilter = function(f) { renderRecepcion(f); };
-window.devolucionesFilter = function(f) { renderDevoluciones(f); };
-window.inventarioFilter = function(f) { renderInventario(f); };
+window.filterDevoluciones = (f, el) => {
+    document.querySelectorAll('#devoluciones .btn-filter').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+    renderDevoluciones(f);
+};
 
+// Arrancar
 cargarTodo();
