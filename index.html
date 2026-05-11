@@ -9,28 +9,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@300;400;500;600;700;800&display=swap');
-
-        :root {
-            --primary: #1a237e;
-            --primary-light: #3949ab;
-            --primary-dark: #0d1642;
-            --accent: #ff6f00;
-            --accent-light: #ffa040;
-            --success: #2e7d32;
-            --danger: #c62828;
-            --warning: #fbc02d;
-            --gray-100: #f8f9fa;
-            --gray-200: #e9ecef;
-            --gray-300: #dee2e6;
-            --gray-800: #343a40;
-            --white: #ffffff;
-            --shadow-md: 0 4px 6px rgba(0,0,0,0.07);
-        }
-
+        :root { --primary: #1a237e; --primary-light: #3949ab; --primary-dark: #0d1642; --accent: #ff6f00; --accent-light: #ffa040; --success: #2e7d32; --danger: #c62828; --warning: #fbc02d; --gray-100: #f8f9fa; --gray-200: #e9ecef; --gray-300: #dee2e6; --gray-800: #343a40; --white: #ffffff; --shadow-md: 0 4px 6px rgba(0,0,0,0.07); }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Inter', sans-serif; background-color: #f0f2f5; color: var(--gray-800); display: flex; min-height: 100vh; overflow-x: hidden; }
 
-        /* SIDEBAR Y HAMBURGUESA */
         .sidebar { width: 280px; background: var(--primary-dark); color: white; position: fixed; height: 100vh; overflow-y: auto; z-index: 1000; transition: transform 0.3s ease; }
         .sidebar.collapsed { transform: translateX(-280px); }
         .sidebar-header { padding: 30px 20px; text-align: center; background: rgba(0,0,0,0.2); }
@@ -39,7 +21,6 @@
         .nav-link { display: flex; align-items: center; padding: 12px 25px; color: rgba(255,255,255,0.7); text-decoration: none; font-size: 0.9rem; font-weight: 500; border-left: 4px solid transparent; cursor: pointer; transition: 0.2s;}
         .nav-link:hover, .nav-link.active { background: rgba(255,255,255,0.1); color: white; border-left-color: var(--accent); }
 
-        /* MAIN CONTENT */
         .main-content { flex: 1; margin-left: 280px; padding: 0; transition: margin-left 0.3s ease, width 0.3s ease; width: calc(100% - 280px); }
         .main-content.expanded { margin-left: 0; width: 100%; }
 
@@ -59,14 +40,18 @@
         .btn-filter { padding: 10px 25px; border-radius: 30px; border: 1px solid var(--gray-300); background: var(--white); font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: 0.3s; }
         .btn-filter.active { background: var(--primary); color: white; border-color: var(--primary); box-shadow: var(--shadow-md); }
 
-        /* KPI VISUALS (INDICADORES TIPO GAUGE) */
         .gauge-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 30px; }
         .gauge-card { background: white; border-radius: 16px; padding: 20px; text-align: center; box-shadow: var(--shadow-md); border-top: 4px solid var(--primary); }
         .gauge-container { height: 160px; width: 100%; position: relative; }
         .gauge-title { font-weight: 700; font-size: 0.9rem; color: var(--primary-dark); text-transform: uppercase; margin-top: 10px; }
         .gauge-value { font-size: 1.8rem; font-weight: 800; font-family: 'Poppins'; }
 
-        /* TABLA DE SEGUIMIENTO (ESTILO PDF) */
+        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .kpi-card { background: var(--white); border-radius: 16px; padding: 25px; box-shadow: var(--shadow-md); border-left: 5px solid var(--primary); }
+        .kpi-title { font-size: 0.8rem; font-weight: 700; color: #7f8c8d; text-transform: uppercase; margin-bottom: 10px; }
+        .kpi-value { font-family: 'Poppins', sans-serif; font-size: 2.2rem; font-weight: 800; color: var(--primary-dark); margin-bottom: 5px;}
+        .kpi-detail { font-size: 0.8rem; color: #7f8c8d; font-weight: 600; line-height: 1.4;}
+
         .seguimiento-table-card { background: var(--white); border-radius: 12px; box-shadow: var(--shadow-md); overflow: hidden; margin-bottom: 30px; width: 100%; border: 1px solid var(--gray-200); }
         .seguimiento-header { padding: 20px 30px; background: var(--primary); color: white; display: flex; justify-content: space-between; align-items: center; }
         .seguimiento-header h3 { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 1.2rem; margin: 0; }
@@ -78,14 +63,12 @@
         .seguimiento-table tr:hover { background-color: #f8f9fa; }
         .pct-badge { padding: 5px 10px; border-radius: 6px; font-weight: 800; color: white; display: inline-block; min-width: 70px; }
 
-        /* GRIDS Y CARDS */
         .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 30px; margin-bottom: 30px; }
         .chart-card { background: var(--white); border-radius: 16px; padding: 25px; box-shadow: var(--shadow-md); border: 1px solid var(--gray-200); width: 100%; }
         .chart-header { display: flex; justify-content: space-between; border-bottom: 2px solid var(--gray-100); padding-bottom: 15px; margin-bottom: 20px; }
         .chart-header h3 { font-family: 'Poppins', sans-serif; font-size: 1.1rem; color: var(--primary-dark); text-transform: uppercase; font-weight: 700; }
         .chart-container { position: relative; height: 350px; width: 100%; }
 
-        /* TABLAS GENERALES */
         .table-card { background: var(--white); border-radius: 16px; padding: 0; box-shadow: var(--shadow-md); overflow: hidden; margin-bottom: 30px; width: 100%; border: 1px solid var(--gray-200);}
         .table-header { padding: 20px 30px; background: var(--gray-100); border-bottom: 1px solid var(--gray-200); font-family: 'Poppins'; font-weight: 700; font-size: 1.1rem; color: var(--primary-dark); }
         .table-wrapper { overflow-x: auto; max-height: 500px; }
@@ -94,6 +77,7 @@
         .general-table td { padding: 15px 30px; border-bottom: 1px solid var(--gray-100); font-size: 0.95rem; font-weight: 600; color: #34495e;}
         .text-right { text-align: right !important; }
         .text-left { text-align: left !important; }
+        .mt-4 { margin-top: 1.5rem; }
     </style>
 </head>
 <body>
@@ -107,17 +91,20 @@
         <a class="nav-link" onclick="showSection('contenedores', this)">🚢 Descarga Contenedores</a>
         
         <div class="nav-group">Producción</div>
-        <a class="nav-link" onclick="showSection('etiquetado', this)">🏷️ Etiquetado y Proceso</a>
-        <a class="nav-link" onclick="showSection('control', this)">✅ Control de Calidad</a>
-        <a class="nav-link" onclick="showSection('distribucion', this)">🚚 Distribución Comercial</a>
+        <a class="nav-link" onclick="showSection('etiquetado', this)">🏷️ Área de Etiquetado</a>
+        <a class="nav-link" onclick="showSection('control', this)">✅ Control y Etiquetado</a>
         
-        <div class="nav-group">Resultados</div>
+        <div class="nav-group">Comercial y Logística</div>
+        <a class="nav-link" onclick="showSection('distribucion', this)">🚚 Distribución</a>
         <a class="nav-link" onclick="showSection('despacho', this)">📤 Despacho Logístico</a>
+        
+        <div class="nav-group">Auditoría</div>
         <a class="nav-link" onclick="showSection('auditoria', this)">🔍 Auditoría (Meta 15%)</a>
         <a class="nav-link" onclick="showSection('mayoreo', this)">🏬 Auditoría Mayoreo</a>
         
         <div class="nav-group">Inventario</div>
-        <a class="nav-link" onclick="showSection('reclamos', this)">📞 Reclamos y Ajustes</a>
+        <a class="nav-link" onclick="showSection('reclamos', this)">📞 Reclamos a Proveedor</a>
+        <a class="nav-link" onclick="showSection('ajustes', this)">⚙️ Ajustes Internos</a>
         <a class="nav-link" onclick="showSection('devoluciones', this)">🔄 Devoluciones Tiendas</a>
         <a class="nav-link" onclick="showSection('inventario', this)">📋 Control de Inventario</a>
 
@@ -134,43 +121,23 @@
             <div style="font-weight: 800; color: var(--accent); font-size: 1rem;">ABRIL 2026</div>
         </header>
 
-        <!-- 0. RESUMEN DE OBJETIVOS (TABLA PDF + GAUGES) -->
+        <!-- 0. RESUMEN -->
         <section id="resumen" class="section active">
             <div class="page-title">DASHBOARD ABRIL <span>Cumplimiento por Área</span></div>
-            
-            <div class="gauge-grid" id="gauge-container">
-                <!-- Se inyectan los medidores visuales aquí -->
-            </div>
-
+            <div class="gauge-grid" id="gauge-container"></div>
             <div class="seguimiento-table-card">
-                <div class="seguimiento-header">
-                    <h3>Reporte General de Cumplimiento vs Meta</h3>
-                </div>
+                <div class="seguimiento-header"><h3>Reporte General de Cumplimiento vs Meta</h3></div>
                 <div class="seguimiento-table-wrapper">
                     <table class="seguimiento-table" id="tabla-seguimiento">
-                        <thead>
-                            <tr>
-                                <th class="text-left">ÁREA OPERATIVA</th>
-                                <th>META MENSUAL</th>
-                                <th>ACUMULADO REAL</th>
-                                <th>DIFERENCIA VS META</th>
-                                <th>PORCENTAJE DE CUMPLIMIENTO</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <!-- Llenado dinámicamente por JS -->
-                        </tbody>
+                        <thead><tr><th class="text-left">ÁREA OPERATIVA</th><th>META MENSUAL</th><th>ACUMULADO REAL</th><th>DIFERENCIA VS META</th><th>PORCENTAJE DE CUMPLIMIENTO</th></tr></thead>
+                        <tbody></tbody>
                     </table>
                 </div>
             </div>
-
-            <div class="chart-card">
-                <div class="chart-header"><h3>Tendencia de Cumplimiento Global Semanal</h3></div>
-                <div class="chart-container"><canvas id="chartResumenGeneral"></canvas></div>
-            </div>
+            <div class="chart-card"><div class="chart-header"><h3>Tendencia de Cumplimiento Global Semanal</h3></div><div class="chart-container"><canvas id="chartResumenGeneral"></canvas></div></div>
         </section>
 
-        <!-- 1. RECEPCIÓN -->
+        <!-- 1. RECEPCION -->
         <section id="recepcion" class="section">
             <div class="page-title">Recepción de Mercadería</div>
             <div class="filter-container">
@@ -179,17 +146,13 @@
                 <button class="btn-filter" onclick="filterData('recepcion', 'internacional', this)">Internacional</button>
             </div>
             <div class="dashboard-grid">
+                <div class="chart-card"><div class="chart-header"><h3>Evolución Semanal (Unidades)</h3></div><div class="chart-container"><canvas id="chartRecSemanal"></canvas></div></div>
                 <div class="chart-card"><div class="chart-header"><h3>Recepción por División</h3></div><div class="chart-container"><canvas id="chartRecDivision"></canvas></div></div>
                 <div class="chart-card"><div class="chart-header"><h3>Comparativo YoY (2025 vs 2026)</h3></div><div class="chart-container"><canvas id="chartRecYoY"></canvas></div></div>
             </div>
             <div class="table-card">
-                <div class="table-header">Top Proveedores (Volumen y Costo)</div>
-                <div class="table-wrapper">
-                    <table class="general-table" id="tableRecProveedores">
-                        <thead><tr><th>Proveedor</th><th class="text-right">Unidades</th><th class="text-right">Costo Total</th></tr></thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
+                <div class="table-header">Top Proveedores (Participación de Costo)</div>
+                <div class="table-wrapper"><table class="general-table" id="tableRecProveedores"><thead><tr><th>Proveedor</th><th class="text-right">Unidades</th><th class="text-right">Participación (%)</th></tr></thead><tbody></tbody></table></div>
             </div>
         </section>
 
@@ -200,20 +163,32 @@
                 <div class="chart-card"><div class="chart-header"><h3>Tiempos de Descarga por País (Hrs)</h3></div><div class="chart-container"><canvas id="chartContTiempos"></canvas></div></div>
                 <div class="chart-card"><div class="chart-header"><h3>Costo Operativo Semanal</h3></div><div class="chart-container"><canvas id="chartContCostos"></canvas></div></div>
             </div>
+            <div class="table-card">
+                <div class="table-header">Detalle Operativo por Contenedor</div>
+                <div class="table-wrapper"><table class="general-table" id="tableContenedores"><thead><tr><th>Nº Contenedor</th><th>País</th><th style="text-align:center;">Personal Asignado</th><th>Tiempo de Descarga</th><th>Min. por Persona</th><th class="text-right">Costo Operativo</th></tr></thead><tbody></tbody></table></div>
+            </div>
         </section>
 
         <!-- 3. ETIQUETADO -->
         <section id="etiquetado" class="section">
-            <div class="page-title">Etiquetado y Proceso</div>
+            <div class="page-title">Área de Etiquetado <span>Producción</span></div>
+            <div class="kpi-grid">
+                <div class="kpi-card"><div class="kpi-title">Producción Total Mensual</div><div class="kpi-value" id="kpi-etiq-total">0</div><div class="kpi-detail">Unidades Procesadas</div></div>
+            </div>
             <div class="dashboard-grid">
                 <div class="chart-card"><div class="chart-header"><h3>Productividad por División</h3></div><div class="chart-container"><canvas id="chartEtiqDiv"></canvas></div></div>
                 <div class="chart-card"><div class="chart-header"><h3>Productividad Semanal</h3></div><div class="chart-container"><canvas id="chartEtiqSemanal"></canvas></div></div>
             </div>
         </section>
 
-        <!-- 4. CONTROL -->
+        <!-- 4. CONTROL Y ETIQUETADO -->
         <section id="control" class="section">
-            <div class="page-title">Control de Calidad</div>
+            <div class="page-title">Control y Etiquetado <span>Gestión de Errores y Bultos</span></div>
+            <div class="kpi-grid">
+                <div class="kpi-card" style="border-left-color: var(--accent);"><div class="kpi-title">Bultos Revisados</div><div class="kpi-value" id="kpi-control-bultos">0</div><div class="kpi-detail">Volumen Controlado</div></div>
+                <div class="kpi-card" style="border-left-color: var(--danger);"><div class="kpi-title">Tasa de Error Global</div><div class="kpi-value" id="kpi-control-pct" style="color: var(--danger);">0.00%</div><div class="kpi-detail">Calidad de Proceso</div></div>
+                <div class="kpi-card"><div class="kpi-title">Unidades con Error</div><div class="kpi-value" id="kpi-control-und">0</div><div class="kpi-detail">Total Detectado</div></div>
+            </div>
             <div class="dashboard-grid">
                 <div class="chart-card"><div class="chart-header"><h3>Tasa de Error Semanal (%)</h3></div><div class="chart-container"><canvas id="chartControlError"></canvas></div></div>
                 <div class="chart-card"><div class="chart-header"><h3>Errores por Motivo</h3></div><div class="chart-container"><canvas id="chartControlMotivos"></canvas></div></div>
@@ -228,107 +203,205 @@
                 <button class="btn-filter" onclick="filterData('distribucion', 'mayoreo', this)">Solo Mayoreo</button>
                 <button class="btn-filter" onclick="filterData('distribucion', 'detalle', this)">Solo Detalle</button>
             </div>
+            <div class="kpi-grid">
+                <div class="kpi-card"><div class="kpi-title">Total Unidades Transferidas</div><div class="kpi-value" id="kpi-dist-und">0</div></div>
+                <div class="kpi-card"><div class="kpi-title">Total Bultos Enviados</div><div class="kpi-value" id="kpi-dist-bul">0</div></div>
+                <div class="kpi-card" style="border-left-color: var(--danger);"><div class="kpi-title">Margen de Error (Control)</div><div class="kpi-value" id="kpi-dist-err" style="color: var(--danger);">0.00%</div></div>
+            </div>
             <div class="dashboard-grid">
-                <div class="chart-card"><div class="chart-header"><h3>Transferencias por Compañía</h3></div><div class="chart-container"><canvas id="chartDistComp"></canvas></div></div>
-                <div class="chart-card"><div class="chart-header"><h3>Bultos Distribuidos por Semana</h3></div><div class="chart-container"><canvas id="chartDistBultos"></canvas></div></div>
+                <div class="chart-card"><div class="chart-header"><h3>Transferencias por Compañía (AEC vs DS)</h3></div><div class="chart-container"><canvas id="chartDistComp"></canvas></div></div>
+                <div class="chart-card"><div class="chart-header"><h3>Distribución Semanal</h3></div><div class="chart-container"><canvas id="chartDistSemanal"></canvas></div></div>
+                <div class="chart-card"><div class="chart-header"><h3>Distribución por División (Unidades y Bultos)</h3></div><div class="chart-container"><canvas id="chartDistDiv"></canvas></div></div>
+            </div>
+            <div class="table-card">
+                <div class="table-header">Top 10 Tiendas (Mayor Distribución)</div>
+                <div class="table-wrapper"><table class="general-table" id="tableDistTiendas"><thead><tr><th>Tienda</th><th class="text-right">Bultos</th><th class="text-right">Unidades</th></tr></thead><tbody></tbody></table></div>
             </div>
         </section>
 
-        <!-- 6. DESPACHO -->
+        <!-- 6. DESPACHO LOGÍSTICO VS VENTAS -->
         <section id="despacho" class="section">
-            <div class="page-title">Despacho Logístico vs Comercial</div>
+            <div class="page-title">Despacho Logístico vs Ventas Comerciales</div>
+            
+            <h3 style="font-family:'Poppins'; margin-bottom: 15px; color:var(--primary);">1. Módulo Logístico</h3>
+            <div class="kpi-grid">
+                <div class="kpi-card"><div class="kpi-title">Bultos Despachados</div><div class="kpi-value" id="kpi-desp-bul">0</div></div>
+                <div class="kpi-card"><div class="kpi-title">Unidades Despachadas</div><div class="kpi-value" id="kpi-desp-und">0</div></div>
+                <div class="kpi-card" style="border-left-color: var(--success);"><div class="kpi-title">% Cumplimiento Logístico</div><div class="kpi-value" id="kpi-desp-cumpl" style="color: var(--success);">0%</div></div>
+            </div>
             <div class="dashboard-grid">
-                <div class="chart-card"><div class="chart-header"><h3>Logística: Envíos Semanales</h3></div><div class="chart-container"><canvas id="chartDespachoSemanal"></canvas></div></div>
-                <div class="chart-card"><div class="chart-header"><h3>Comercial: Despacho vs Ventas</h3></div><div class="chart-container"><canvas id="chartDespachoVentas"></canvas></div></div>
+                <div class="chart-card"><div class="chart-header"><h3>Transporte Interno vs Externo</h3></div><div class="chart-container"><canvas id="chartDespTransp"></canvas></div></div>
+                <div class="chart-card"><div class="chart-header"><h3>Despacho por Compañía</h3></div><div class="chart-container"><canvas id="chartDespCia"></canvas></div></div>
+            </div>
+            <div class="table-card">
+                <div class="table-header">Detalle de Despacho por Tienda</div>
+                <div class="table-wrapper"><table class="general-table" id="tableDespTiendas"><thead><tr><th>Tienda</th><th class="text-right">Bultos</th><th class="text-right">Unidades</th><th class="text-right">Compañía</th></tr></thead><tbody></tbody></table></div>
+            </div>
+
+            <h3 style="font-family:'Poppins'; margin-bottom: 15px; margin-top: 30px; color:var(--accent);">2. Módulo Comercial (Ventas vs Envío)</h3>
+            <div class="kpi-grid">
+                <div class="kpi-card"><div class="kpi-title">Total Enviado (CEDIS)</div><div class="kpi-value" id="kpi-com-env">0</div></div>
+                <div class="kpi-card"><div class="kpi-title">Venta Total (Tiendas)</div><div class="kpi-value" id="kpi-com-ven">0</div></div>
+                <div class="kpi-card" style="border-left-color: var(--accent);"><div class="kpi-title">% Venta vs Enviado</div><div class="kpi-value" id="kpi-com-pct" style="color: var(--accent);">0%</div></div>
+            </div>
+            <div class="dashboard-grid">
+                <div class="chart-card" style="grid-column: span 2;"><div class="chart-header"><h3>Comparativo por División: Enviado vs Vendido</h3></div><div class="chart-container"><canvas id="chartComDiv"></canvas></div></div>
             </div>
         </section>
 
         <!-- 7. AUDITORIA -->
         <section id="auditoria" class="section">
             <div class="page-title">Fiscalización (Meta 15%)</div>
+            <div class="kpi-grid">
+                <div class="kpi-card"><div class="kpi-title">Total Facturado (Bultos)</div><div class="kpi-value" id="kpi-aud-fact">0</div></div>
+                <div class="kpi-card"><div class="kpi-title">Total Auditado (Bultos)</div><div class="kpi-value" id="kpi-aud-audit">0</div></div>
+                <div class="kpi-card" style="border-left-color: var(--success);"><div class="kpi-title">% Cobertura (Meta 15%)</div><div class="kpi-value" id="kpi-aud-cob" style="color: var(--success);">0%</div></div>
+            </div>
             <div class="dashboard-grid">
-                <div class="chart-card"><div class="chart-header"><h3>Embudo: Facturado vs Auditado</h3></div><div class="chart-container"><canvas id="chartAudEmbudo"></canvas></div></div>
+                <div class="chart-card"><div class="chart-header"><h3>Auditado por Compañía</h3></div><div class="chart-container"><canvas id="chartAudCia"></canvas></div></div>
+                <div class="chart-card"><div class="chart-header"><h3>Tendencia Semanal de Auditoría</h3></div><div class="chart-container"><canvas id="chartAudSemanal"></canvas></div></div>
             </div>
             <div class="table-card">
+                <div class="table-header">Productividad de Auditores (Bultos Procesados)</div>
+                <div class="table-wrapper"><table class="general-table" id="tableAudAuditores"><thead><tr><th>Auditor</th><th class="text-right">Bultos Revisados</th></tr></thead><tbody></tbody></table></div>
+            </div>
+            <div class="table-card mt-4">
                 <div class="table-header">Top Errores por Facturador</div>
-                <div class="table-wrapper">
-                    <table class="general-table" id="tableAudFacturadores">
-                        <thead><tr><th>Facturador</th><th class="text-right">Bultos</th><th class="text-right">Unidades Error</th></tr></thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
+                <div class="table-wrapper"><table class="general-table" id="tableAudFacturadores"><thead><tr><th>Facturador</th><th class="text-right">Bultos</th><th class="text-right">Unidades Error</th></tr></thead><tbody></tbody></table></div>
+            </div>
+            <div class="table-card mt-4">
+                <div class="table-header">Auditoría por División vs Facturado</div>
+                <div class="table-wrapper"><table class="general-table" id="tableAudDiv"><thead><tr><th>División</th><th class="text-right">Auditado</th></tr></thead><tbody></tbody></table></div>
             </div>
         </section>
 
         <!-- 8. MAYOREO -->
         <section id="mayoreo" class="section">
             <div class="page-title">Auditoría Mayoreo (In-House)</div>
+            <div class="kpi-grid">
+                <div class="kpi-card"><div class="kpi-title">Recaudación Total Validada</div><div class="kpi-value" id="kpi-may-rec">L 0</div></div>
+                <div class="kpi-card"><div class="kpi-title">Total Transacciones / Bultos</div><div class="kpi-value" id="kpi-may-trans">0</div></div>
+                <div class="kpi-card" style="border-left-color: var(--accent);"><div class="kpi-title">Promedio Diario (Lps)</div><div class="kpi-value" id="kpi-may-prom" style="color: var(--accent);">L 0</div></div>
+            </div>
             <div class="dashboard-grid">
-                <div class="chart-card"><div class="chart-header"><h3>Recaudación Mensual Validada</h3></div><div class="chart-container"><canvas id="chartMayoreoCobro"></canvas></div></div>
+                <div class="chart-card"><div class="chart-header"><h3>Tendencia Semanal de Cobros</h3></div><div class="chart-container"><canvas id="chartMaySemanal"></canvas></div></div>
+                <div class="chart-card"><div class="chart-header"><h3>Eficiencia por Cajero / Facturador</h3></div><div class="chart-container"><canvas id="chartMayCajero"></canvas></div></div>
+            </div>
+            <div class="table-card">
+                <div class="table-header">Detalle Operativo Mayoreo</div>
+                <div class="table-wrapper"><table class="general-table" id="tableMayDetalle"><thead><tr><th>Cliente / Referencia</th><th>Fecha</th><th class="text-right">Transacciones</th><th class="text-right">Recaudado (Lps)</th></tr></thead><tbody></tbody></table></div>
             </div>
         </section>
 
-        <!-- 9. RECLAMOS Y AJUSTES -->
+        <!-- 9. RECLAMOS -->
         <section id="reclamos" class="section">
-            <div class="page-title">Reclamos y Ajustes Internos</div>
+            <div class="page-title">Reclamos a Proveedores</div>
             <div class="dashboard-grid">
-                <div class="chart-card" style="border-top: 4px solid var(--accent);"><div class="chart-header"><h3>Motivos Reclamo a Proveedor ($)</h3></div><div class="chart-container"><canvas id="chartReclamosMotivo"></canvas></div></div>
-                <div class="chart-card" style="border-top: 4px solid var(--danger);"><div class="chart-header"><h3>Ajustes por División (Lps)</h3></div><div class="chart-container"><canvas id="chartAjustesDiv"></canvas></div></div>
+                <div class="chart-card"><div class="chart-header"><h3>Tendencia Semanal de Reclamos</h3></div><div class="chart-container"><canvas id="chartRecProvSemanal"></canvas></div></div>
+                <div class="chart-card"><div class="chart-header"><h3>Impacto por Motivos ($)</h3></div><div class="chart-container"><canvas id="chartRecProvMotivos"></canvas></div></div>
+                <div class="chart-card"><div class="chart-header"><h3>División Afectada</h3></div><div class="chart-container"><canvas id="chartRecProvDiv"></canvas></div></div>
+            </div>
+            <div class="table-card">
+                <div class="table-header">Detalle de Reclamos por Proveedor</div>
+                <div class="table-wrapper"><table class="general-table" id="tableRecProv"><thead><tr><th>Proveedor</th><th class="text-right">Unidades Afectadas</th><th class="text-right">Costo Reclamado ($/Lps)</th></tr></thead><tbody></tbody></table></div>
             </div>
         </section>
 
-        <!-- 10. DEVOLUCIONES -->
+        <!-- 10. AJUSTES -->
+        <section id="ajustes" class="section">
+            <div class="page-title">Ajustes Internos de Inventario</div>
+            <div class="dashboard-grid">
+                <div class="chart-card"><div class="chart-header"><h3>Ajustes por División (Unidades)</h3></div><div class="chart-container"><canvas id="chartAjuDivUnd"></canvas></div></div>
+                <div class="chart-card"><div class="chart-header"><h3>Ajustes por División (Costo)</h3></div><div class="chart-container"><canvas id="chartAjuDivCos"></canvas></div></div>
+                <div class="chart-card"><div class="chart-header"><h3>Tendencia Semanal de Ajustes</h3></div><div class="chart-container"><canvas id="chartAjuSemanal"></canvas></div></div>
+                <div class="chart-card"><div class="chart-header"><h3>Motivos Principales de Ajuste</h3></div><div class="chart-container"><canvas id="chartAjuMotivos"></canvas></div></div>
+            </div>
+            <div class="table-card">
+                <div class="table-header">Control de Ajustes por Proveedor / Marca</div>
+                <div class="table-wrapper"><table class="general-table" id="tableAjuProv"><thead><tr><th>Proveedor / Origen</th><th class="text-right">Unidades Ajustadas</th><th class="text-right">Costo Impactado</th></tr></thead><tbody></tbody></table></div>
+            </div>
+        </section>
+
+        <!-- 11. DEVOLUCIONES -->
         <section id="devoluciones" class="section">
             <div class="page-title">Gestión de Devoluciones</div>
             <div class="filter-container">
-                <button class="btn-filter active" onclick="filterData('devoluciones', 'global', this)">Vista Global</button>
-                <button class="btn-filter" onclick="filterData('devoluciones', 'aec', this)">AEC</button>
-                <button class="btn-filter" onclick="filterData('devoluciones', 'ds', this)">Danilos Store</button>
+                <button class="btn-filter active" onclick="filterData('devoluciones', 'aec', this)">Almacenes El Compadre (AEC)</button>
+                <button class="btn-filter" onclick="filterData('devoluciones', 'ds', this)">Danilos Store (DS)</button>
             </div>
-            <div class="dashboard-grid" id="dev-kpis">
-                <!-- Inyectado por JS -->
+            <div class="kpi-grid">
+                <div class="kpi-card"><div class="kpi-title">Bultos/Facturas Recibidas</div><div class="kpi-value" id="kpi-dev-rec">0</div></div>
+                <div class="kpi-card"><div class="kpi-title">Facturas Aplicadas (NC)</div><div class="kpi-value" id="kpi-dev-apl">0</div></div>
+                <div class="kpi-card"><div class="kpi-title">Facturas Sin Aplicar</div><div class="kpi-value" id="kpi-dev-sin">0</div></div>
+                <div class="kpi-card" style="border-left-color: var(--success);"><div class="kpi-title">Eficiencia NC</div><div class="kpi-value" id="kpi-dev-efi" style="color: var(--success);">0%</div></div>
+                <div class="kpi-card" style="border-left-color: var(--danger);"><div class="kpi-title">% Devolución Global</div><div class="kpi-value" id="kpi-dev-pct" style="color: var(--danger);">0%</div><div class="kpi-detail">Recibido vs Enviado Histórico</div></div>
             </div>
             <div class="dashboard-grid">
-                <div class="chart-card"><div class="chart-header"><h3>Motivos Principales</h3></div><div class="chart-container"><canvas id="chartDevMotivos"></canvas></div></div>
+                <div class="chart-card"><div class="chart-header"><h3>Motivos de Retorno</h3></div><div class="chart-container"><canvas id="chartDevMotivos"></canvas></div></div>
                 <div class="chart-card"><div class="chart-header"><h3>Trazabilidad Semanal</h3></div><div class="chart-container"><canvas id="chartDevSemanal"></canvas></div></div>
+                <div class="chart-card"><div class="chart-header"><h3>Errores Detectados en Devolución</h3></div><div class="chart-container"><canvas id="chartDevErrores"></canvas></div></div>
+            </div>
+            <div class="table-card">
+                <div class="table-header">Detalle de Devoluciones por Tienda</div>
+                <div class="table-wrapper"><table class="general-table" id="tableDevTiendas"><thead><tr><th>Tienda</th><th class="text-right">Bultos</th><th class="text-right">Unidades</th><th class="text-right">Costo Retornado</th></tr></thead><tbody></tbody></table></div>
             </div>
         </section>
 
-        <!-- 11. INVENTARIO -->
+        <!-- 12. INVENTARIO -->
         <section id="inventario" class="section">
-            <div class="page-title">Control de Inventario</div>
+            <div class="page-title">Administración de Inventario</div>
             <div class="filter-container">
-                <button class="btn-filter active" onclick="filterData('inventario', 'global', this)">Vista Global (CEDIS + Tiendas)</button>
-                <button class="btn-filter" onclick="filterData('inventario', 'tiendas', this)">Comparativo Detalle Tiendas</button>
+                <button class="btn-filter active" onclick="filterData('inventario', 'global', this)">Vista Global</button>
+                <button class="btn-filter" onclick="filterData('inventario', 'cedis', this)">Solo CEDIS</button>
+                <button class="btn-filter" onclick="filterData('inventario', 'tiendas', this)">Comparativo Tiendas (Fijo CEDIS)</button>
             </div>
-            <div class="chart-card"><div class="chart-header"><h3>Ajustes Negativos por Semana</h3></div><div class="chart-container"><canvas id="chartInvNegativos"></canvas></div></div>
+            <div class="kpi-grid">
+                <div class="kpi-card" style="border-left-color: var(--success);"><div class="kpi-title">Total Ajustes Positivos</div><div class="kpi-value" id="kpi-inv-pos" style="color: var(--success);">0</div></div>
+                <div class="kpi-card" style="border-left-color: var(--danger);"><div class="kpi-title">Total Ajustes Negativos</div><div class="kpi-value" id="kpi-inv-neg" style="color: var(--danger);">0</div></div>
+                <div class="kpi-card" style="border-left-color: var(--accent);"><div class="kpi-title">Impacto Neto (Lps)</div><div class="kpi-value" id="kpi-inv-neto" style="color: var(--accent);">L 0</div></div>
+            </div>
+            <div class="dashboard-grid">
+                <div class="chart-card"><div class="chart-header"><h3>Ajustes por Departamento</h3></div><div class="chart-container"><canvas id="chartInvDept"></canvas></div></div>
+                <div class="chart-card"><div class="chart-header"><h3>División: Positivo vs Negativo</h3></div><div class="chart-container"><canvas id="chartInvDivPN"></canvas></div></div>
+                <div class="chart-card"><div class="chart-header"><h3>Tipos de Ajuste Generados</h3></div><div class="chart-container"><canvas id="chartInvTipo"></canvas></div></div>
+            </div>
         </section>
 
-        <!-- 12. SEGUNDA D'S -->
+        <!-- 13. SEGUNDA D'S -->
         <section id="segunda" class="section">
             <div class="page-title">Flujo Integral Segunda D'S</div>
-            <div class="chart-card mt-4" style="border-left: 5px solid var(--accent); margin-bottom: 30px;">
-                <div class="chart-header"><h3>ETAPA 1: Origen (Proveedores)</h3></div>
-                <div class="dashboard-grid">
-                    <div class="chart-container"><canvas id="chartSegProvCosto"></canvas></div>
-                    <div class="chart-container"><canvas id="chartSegProvBultos"></canvas></div>
-                </div>
+            
+            <h3 style="font-family:'Poppins'; margin-bottom: 15px; color:var(--primary);">ETAPA 1: Origen (Proveedores)</h3>
+            <div class="dashboard-grid">
+                <div class="chart-card"><div class="chart-header"><h3>Participación Costo (% Valor)</h3></div><div class="chart-container"><canvas id="chartSegProvCosto"></canvas></div></div>
+                <div class="chart-card"><div class="chart-header"><h3>Tendencia Semanal Fardos</h3></div><div class="chart-container"><canvas id="chartSegProvSemanal"></canvas></div></div>
             </div>
-            <div class="chart-card mt-4" style="margin-bottom: 30px;">
-                <div class="chart-header"><h3>ETAPA 2: Producción Interna</h3></div>
-                <div class="chart-container"><canvas id="chartSegProduccion"></canvas></div>
+            <div class="table-card mb-4">
+                <div class="table-header">Detalle de Proveedores Segunda</div>
+                <div class="table-wrapper"><table class="general-table" id="tableSegProv"><thead><tr><th>Proveedor</th><th class="text-right">Fardos/Bultos</th><th class="text-right">Costo Total</th></tr></thead><tbody></tbody></table></div>
             </div>
-            <div class="chart-card mt-4">
-                <div class="chart-header"><h3>ETAPA 3: Salida (Digitación)</h3></div>
-                <div class="dashboard-grid">
-                    <div class="chart-container"><canvas id="chartSegDigSemanal"></canvas></div>
-                    <div class="chart-container"><canvas id="chartSegDigYoY"></canvas></div>
-                </div>
+
+            <h3 style="font-family:'Poppins'; margin-bottom: 15px; color:var(--accent);">ETAPA 2: Producción Interna</h3>
+            <div class="dashboard-grid">
+                <div class="chart-card"><div class="chart-header"><h3>Producción por Área</h3></div><div class="chart-container"><canvas id="chartSegArea"></canvas></div></div>
+                <div class="chart-card"><div class="chart-header"><h3>Producción Semanal</h3></div><div class="chart-container"><canvas id="chartSegProdSemanal"></canvas></div></div>
+                <div class="chart-card"><div class="chart-header"><h3>Eficiencia y Mermas</h3></div><div class="chart-container"><canvas id="chartSegMerma"></canvas></div></div>
+            </div>
+
+            <h3 style="font-family:'Poppins'; margin-bottom: 15px; color:var(--success);">ETAPA 3: Salida (Digitación a Tiendas)</h3>
+            <div class="kpi-grid mb-4">
+                <div class="kpi-card"><div class="kpi-title">Objetivo Mensual Digitación</div><div class="kpi-value" id="kpi-seg-obj">0</div></div>
+                <div class="kpi-card" style="border-left-color: var(--success);"><div class="kpi-title">% Cumplimiento Segunda</div><div class="kpi-value" id="kpi-seg-cumpl" style="color: var(--success);">0%</div></div>
+            </div>
+            <div class="dashboard-grid">
+                <div class="chart-card"><div class="chart-header"><h3>Digitación Semanal</h3></div><div class="chart-container"><canvas id="chartSegDigSemanal"></canvas></div></div>
+                <div class="chart-card"><div class="chart-header"><h3>Comparativo YoY Digitación</h3></div><div class="chart-container"><canvas id="chartSegDigYoY"></canvas></div></div>
             </div>
         </section>
 
     </main>
 
+    <script src="app.js"></script>
     <script>
         function toggleMenu() {
             document.getElementById('sidebar').classList.toggle('collapsed');
@@ -350,6 +423,5 @@
             }
         }
     </script>
-    <script src="app.js"></script>
 </body>
 </html>
