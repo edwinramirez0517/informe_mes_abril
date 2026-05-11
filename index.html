@@ -9,12 +9,28 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@300;400;500;600;700;800&display=swap');
-        
-        :root { --primary: #1a237e; --primary-light: #3949ab; --primary-dark: #0d1642; --accent: #ff6f00; --accent-light: #ffa040; --success: #2e7d32; --warning: #fbc02d; --danger: #c62828; --gray-100: #f8f9fa; --gray-200: #e9ecef; --gray-300: #dee2e6; --gray-800: #343a40; --white: #ffffff; --shadow-md: 0 4px 6px rgba(0,0,0,0.07); }
+
+        :root {
+            --primary: #1a237e;
+            --primary-light: #3949ab;
+            --primary-dark: #0d1642;
+            --accent: #ff6f00;
+            --accent-light: #ffa040;
+            --success: #2e7d32;
+            --danger: #c62828;
+            --warning: #fbc02d;
+            --gray-100: #f8f9fa;
+            --gray-200: #e9ecef;
+            --gray-300: #dee2e6;
+            --gray-800: #343a40;
+            --white: #ffffff;
+            --shadow-md: 0 4px 6px rgba(0,0,0,0.07);
+        }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; background-color: #f0f2f5; color: var(--gray-800); display: flex; min-height: 100vh; overflow-x: hidden;}
-        
-        /* SIDEBAR Y HAMBURGUESA RESTAURADOS */
+        body { font-family: 'Inter', sans-serif; background-color: #f0f2f5; color: var(--gray-800); display: flex; min-height: 100vh; overflow-x: hidden; }
+
+        /* SIDEBAR */
         .sidebar { width: 280px; background: var(--primary-dark); color: white; position: fixed; height: 100vh; overflow-y: auto; z-index: 1000; transition: transform 0.3s ease; }
         .sidebar.collapsed { transform: translateX(-280px); }
         .sidebar-header { padding: 30px 20px; text-align: center; background: rgba(0,0,0,0.2); }
@@ -23,56 +39,61 @@
         .nav-link { display: flex; align-items: center; padding: 12px 25px; color: rgba(255,255,255,0.7); text-decoration: none; font-size: 0.9rem; font-weight: 500; border-left: 4px solid transparent; cursor: pointer; transition: 0.2s;}
         .nav-link:hover, .nav-link.active { background: rgba(255,255,255,0.1); color: white; border-left-color: var(--accent); }
 
+        /* MAIN CONTENT */
         .main-content { flex: 1; margin-left: 280px; padding: 0; transition: margin-left 0.3s ease, width 0.3s ease; width: calc(100% - 280px); }
         .main-content.expanded { margin-left: 0; width: 100%; }
-        
+
         header { background: var(--white); padding: 15px 40px; display: flex; align-items: center; justify-content: space-between; box-shadow: var(--shadow-md); position: sticky; top: 0; z-index: 900; }
         .header-left { display: flex; align-items: center; gap: 20px; }
         .hamburger { font-size: 1.8rem; background: none; border: none; color: var(--primary); cursor: pointer; }
         .header-title { font-family: 'Poppins', sans-serif; font-weight: 700; color: var(--primary); font-size: 1.2rem; }
-        
-        /* SECCIONES EXPANDIDAS */
-        .section { padding: 40px; display: none; width: 100%; max-width: 1800px; margin: 0 auto; }
+
+        .section { padding: 40px; display: none; width: 100%; max-width: 1600px; margin: 0 auto; }
         .section.active { display: block; animation: fadeIn 0.4s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
         .page-title { font-family: 'Poppins', sans-serif; font-size: 2.2rem; font-weight: 800; color: var(--primary-dark); margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center;}
         .page-title span { font-size: 0.9rem; color: var(--accent); background: rgba(255,111,0,0.1); padding: 5px 15px; border-radius: 20px; }
-        
+
         .filter-container { display: flex; gap: 10px; margin-bottom: 25px; flex-wrap: wrap;}
         .btn-filter { padding: 10px 25px; border-radius: 30px; border: 1px solid var(--gray-300); background: var(--white); font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: 0.3s; }
         .btn-filter.active { background: var(--primary); color: white; border-color: var(--primary); box-shadow: var(--shadow-md); }
 
-        /* GRIDS DINÁMICOS PARA LLENAR PANTALLA */
+        /* TABLA DE SEGUIMIENTO (ESTILO PDF) */
+        .seguimiento-table-card { background: var(--white); border-radius: 12px; box-shadow: var(--shadow-md); overflow: hidden; margin-bottom: 30px; width: 100%; border: 1px solid var(--gray-200); }
+        .seguimiento-header { padding: 20px 30px; background: var(--primary); color: white; display: flex; justify-content: space-between; align-items: center; }
+        .seguimiento-header h3 { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 1.2rem; margin: 0; }
+        .seguimiento-table-wrapper { overflow-x: auto; }
+        .seguimiento-table { width: 100%; border-collapse: collapse; min-width: 1000px; }
+        .seguimiento-table th { background: var(--primary-light); color: white; padding: 15px; text-align: center; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; border-right: 1px solid rgba(255,255,255,0.2); vertical-align: middle; }
+        .seguimiento-table td { padding: 15px; border-bottom: 1px solid var(--gray-200); border-right: 1px solid var(--gray-100); font-size: 0.95rem; font-weight: 600; text-align: center; color: var(--gray-800); }
+        .seguimiento-table td:first-child { text-align: left; font-weight: 700; color: var(--primary-dark); }
+        .seguimiento-table tr:hover { background-color: #f8f9fa; }
+        .pct-badge { padding: 5px 10px; border-radius: 6px; font-weight: 800; color: white; display: inline-block; min-width: 70px; }
+
+        /* GRIDS Y CARDS */
         .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 30px; margin-bottom: 30px; }
-        .goals-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 25px; margin-bottom: 30px; }
-        
-        .kpi-card { background: var(--white); border-radius: 16px; padding: 25px; box-shadow: var(--shadow-md); border-left: 5px solid var(--primary); display: flex; flex-direction: column; justify-content: center;}
-        .kpi-title { font-size: 0.8rem; font-weight: 700; color: #7f8c8d; text-transform: uppercase; margin-bottom: 10px; }
-        .kpi-value { font-family: 'Poppins', sans-serif; font-size: 2.5rem; font-weight: 800; color: var(--primary-dark); margin-bottom: 5px;}
-        .kpi-detail { font-size: 0.85rem; color: #7f8c8d; font-weight: 600; line-height: 1.5; }
-        .kpi-bar { height: 10px; background: var(--gray-200); border-radius: 5px; margin-top: 15px; overflow: hidden; }
-        .kpi-bar-fill { height: 100%; transition: 1s ease; }
+        .chart-card { background: var(--white); border-radius: 16px; padding: 25px; box-shadow: var(--shadow-md); border: 1px solid var(--gray-200); width: 100%; }
+        .chart-header { display: flex; justify-content: space-between; border-bottom: 2px solid var(--gray-100); padding-bottom: 15px; margin-bottom: 20px; }
+        .chart-header h3 { font-family: 'Poppins', sans-serif; font-size: 1.1rem; color: var(--primary-dark); text-transform: uppercase; font-weight: 700; }
+        .chart-container { position: relative; height: 350px; width: 100%; }
 
-        .chart-card { background: var(--white); border-radius: 20px; padding: 30px; box-shadow: var(--shadow-md); border: 1px solid var(--gray-200); margin-bottom: 30px; width: 100%; }
-        .chart-header { display: flex; justify-content: space-between; border-bottom: 1px solid var(--gray-200); padding-bottom: 15px; margin-bottom: 25px; }
-        .chart-header h3 { font-family: 'Poppins', sans-serif; font-size: 1.1rem; color: var(--primary-dark); text-transform: uppercase; }
-        .chart-container { position: relative; height: 400px; width: 100%; } /* Gráficos más altos */
-
-        .table-card { background: var(--white); border-radius: 20px; padding: 0; box-shadow: var(--shadow-md); overflow: hidden; margin-bottom: 30px; width: 100%;}
-        .table-header { padding: 25px 30px; background: var(--gray-100); border-bottom: 1px solid var(--gray-200); font-family: 'Poppins'; font-weight: 700; font-size: 1.1rem; color: var(--primary-dark); }
+        /* TABLAS GENERALES */
+        .table-card { background: var(--white); border-radius: 16px; padding: 0; box-shadow: var(--shadow-md); overflow: hidden; margin-bottom: 30px; width: 100%; border: 1px solid var(--gray-200);}
+        .table-header { padding: 20px 30px; background: var(--gray-100); border-bottom: 1px solid var(--gray-200); font-family: 'Poppins'; font-weight: 700; font-size: 1.1rem; color: var(--primary-dark); }
         .table-wrapper { overflow-x: auto; max-height: 500px; }
-        table { width: 100%; border-collapse: collapse; min-width: 800px; }
-        th { background: white; padding: 18px 30px; text-align: left; font-size: 0.8rem; color: #7f8c8d; text-transform: uppercase; position: sticky; top: 0; z-index: 10; border-bottom: 2px solid var(--gray-200);}
-        td { padding: 18px 30px; border-bottom: 1px solid var(--gray-100); font-size: 1rem; font-weight: 600; color: #34495e;}
-        .text-right { text-align: right; }
+        .general-table { width: 100%; border-collapse: collapse; min-width: 800px; }
+        .general-table th { background: white; padding: 15px 30px; text-align: left; font-size: 0.8rem; color: #7f8c8d; text-transform: uppercase; position: sticky; top: 0; z-index: 10; border-bottom: 2px solid var(--gray-200);}
+        .general-table td { padding: 15px 30px; border-bottom: 1px solid var(--gray-100); font-size: 0.95rem; font-weight: 600; color: #34495e;}
+        .text-right { text-align: right !important; }
+        .text-left { text-align: left !important; }
     </style>
 </head>
 <body>
     <nav class="sidebar" id="sidebar">
         <div class="sidebar-header"><h2>CEDIS 2026</h2></div>
         <div class="nav-group">Vista Principal</div>
-        <a class="nav-link active" onclick="showSection('resumen', this)">📊 Panel de Cumplimiento</a>
+        <a class="nav-link active" onclick="showSection('resumen', this)">📊 Cumplimiento por Área</a>
         
         <div class="nav-group">Entradas</div>
         <a class="nav-link" onclick="showSection('recepcion', this)">📦 Recepción de Mercadería</a>
@@ -101,17 +122,44 @@
         <header>
             <div class="header-left">
                 <button class="hamburger" onclick="toggleMenu()">☰</button>
-                <div class="header-title">INFORME GERENCIAL CEDIS</div>
+                <div class="header-title">INFORME DE PRODUCCIÓN CEDIS</div>
             </div>
             <div style="font-weight: 800; color: var(--accent); font-size: 1rem;">ABRIL 2026</div>
         </header>
 
+        <!-- 0. RESUMEN DE OBJETIVOS (TABLA PDF) -->
         <section id="resumen" class="section active">
-            <div class="page-title">Panel Maestro de Objetivos <span>Saldos al Corte</span></div>
-            <div class="goals-grid" id="goals-container"></div>
-            <div class="chart-card"><div class="chart-header"><h3>Productividad Global Semanal</h3></div><div class="chart-container"><canvas id="chartResumenGeneral"></canvas></div></div>
+            <div class="page-title">DASHBOARD ABRIL <span>Cumplimiento por Área</span></div>
+            
+            <div class="seguimiento-table-card">
+                <div class="seguimiento-header">
+                    <h3>Reporte General de Cumplimiento</h3>
+                </div>
+                <div class="seguimiento-table-wrapper">
+                    <table class="seguimiento-table" id="tabla-seguimiento">
+                        <thead>
+                            <tr>
+                                <th class="text-left">ÁREA</th>
+                                <th>META MENSUAL</th>
+                                <th>UNIDADES ACUMULADAS</th>
+                                <th>DIFERENCIA VS META</th>
+                                <th>PORCENTAJE DE CUMPLIMIENTO</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Llenado por JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="chart-card">
+                <div class="chart-header"><h3>Tendencia de Cumplimiento Global</h3></div>
+                <div class="chart-container"><canvas id="chartResumenGeneral"></canvas></div>
+            </div>
         </section>
 
+        <!-- 1. RECEPCIÓN -->
         <section id="recepcion" class="section">
             <div class="page-title">Recepción de Mercadería</div>
             <div class="filter-container">
@@ -123,11 +171,18 @@
                 <div class="chart-card"><div class="chart-header"><h3>Recepción por División</h3></div><div class="chart-container"><canvas id="chartRecDivision"></canvas></div></div>
                 <div class="chart-card"><div class="chart-header"><h3>Comparativo YoY</h3></div><div class="chart-container"><canvas id="chartRecYoY"></canvas></div></div>
             </div>
-            <div class="table-card"><div class="table-header">Top Proveedores (Volumen y Costo)</div>
-                <div class="table-wrapper"><table id="tableRecProveedores"><thead><tr><th>Proveedor</th><th class="text-right">Unidades</th><th class="text-right">Costo Total</th></tr></thead><tbody></tbody></table></div>
+            <div class="table-card">
+                <div class="table-header">Top Proveedores (Volumen y Costo)</div>
+                <div class="table-wrapper">
+                    <table class="general-table" id="tableRecProveedores">
+                        <thead><tr><th>Proveedor</th><th class="text-right">Unidades</th><th class="text-right">Costo Total</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
             </div>
         </section>
 
+        <!-- 2. CONTENEDORES -->
         <section id="contenedores" class="section">
             <div class="page-title">Descarga de Contenedores</div>
             <div class="dashboard-grid">
@@ -136,6 +191,7 @@
             </div>
         </section>
 
+        <!-- 3. ETIQUETADO -->
         <section id="etiquetado" class="section">
             <div class="page-title">Etiquetado y Proceso</div>
             <div class="dashboard-grid">
@@ -144,6 +200,7 @@
             </div>
         </section>
 
+        <!-- 4. CONTROL -->
         <section id="control" class="section">
             <div class="page-title">Control de Calidad</div>
             <div class="dashboard-grid">
@@ -152,6 +209,7 @@
             </div>
         </section>
 
+        <!-- 5. DISTRIBUCION -->
         <section id="distribucion" class="section">
             <div class="page-title">Distribución Comercial</div>
             <div class="filter-container">
@@ -165,6 +223,7 @@
             </div>
         </section>
 
+        <!-- 6. DESPACHO -->
         <section id="despacho" class="section">
             <div class="page-title">Despacho Logístico vs Comercial</div>
             <div class="dashboard-grid">
@@ -173,16 +232,24 @@
             </div>
         </section>
 
+        <!-- 7. AUDITORIA -->
         <section id="auditoria" class="section">
             <div class="page-title">Fiscalización (Meta 15%)</div>
             <div class="dashboard-grid">
                 <div class="chart-card"><div class="chart-header"><h3>Embudo: Facturado vs Auditado</h3></div><div class="chart-container"><canvas id="chartAudEmbudo"></canvas></div></div>
             </div>
-            <div class="table-card"><div class="table-header">Top Errores por Facturador</div>
-                <div class="table-wrapper"><table id="tableAudFacturadores"><thead><tr><th>Facturador</th><th class="text-right">Bultos</th><th class="text-right">Unidades Error</th></tr></thead><tbody></tbody></table></div>
+            <div class="table-card">
+                <div class="table-header">Top Errores por Facturador</div>
+                <div class="table-wrapper">
+                    <table class="general-table" id="tableAudFacturadores">
+                        <thead><tr><th>Facturador</th><th class="text-right">Bultos</th><th class="text-right">Unidades Error</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
             </div>
         </section>
 
+        <!-- 8. MAYOREO -->
         <section id="mayoreo" class="section">
             <div class="page-title">Auditoría Mayoreo (In-House)</div>
             <div class="dashboard-grid">
@@ -190,14 +257,16 @@
             </div>
         </section>
 
+        <!-- 9. RECLAMOS Y AJUSTES -->
         <section id="reclamos" class="section">
             <div class="page-title">Reclamos y Ajustes Internos</div>
             <div class="dashboard-grid">
-                <div class="chart-card" style="border-top: 5px solid var(--accent);"><div class="chart-header"><h3>Motivos Reclamo a Proveedor ($)</h3></div><div class="chart-container"><canvas id="chartReclamosMotivo"></canvas></div></div>
-                <div class="chart-card" style="border-top: 5px solid var(--danger);"><div class="chart-header"><h3>Ajustes por División (Lps)</h3></div><div class="chart-container"><canvas id="chartAjustesDiv"></canvas></div></div>
+                <div class="chart-card" style="border-top: 4px solid var(--accent);"><div class="chart-header"><h3>Motivos Reclamo a Proveedor ($)</h3></div><div class="chart-container"><canvas id="chartReclamosMotivo"></canvas></div></div>
+                <div class="chart-card" style="border-top: 4px solid var(--danger);"><div class="chart-header"><h3>Ajustes por División (Lps)</h3></div><div class="chart-container"><canvas id="chartAjustesDiv"></canvas></div></div>
             </div>
         </section>
 
+        <!-- 10. DEVOLUCIONES -->
         <section id="devoluciones" class="section">
             <div class="page-title">Gestión de Devoluciones</div>
             <div class="filter-container">
@@ -205,13 +274,13 @@
                 <button class="btn-filter" onclick="filterData('devoluciones', 'aec', this)">AEC</button>
                 <button class="btn-filter" onclick="filterData('devoluciones', 'ds', this)">Danilos Store</button>
             </div>
-            <div class="goals-grid" id="dev-kpis"></div>
             <div class="dashboard-grid">
                 <div class="chart-card"><div class="chart-header"><h3>Motivos Principales</h3></div><div class="chart-container"><canvas id="chartDevMotivos"></canvas></div></div>
                 <div class="chart-card"><div class="chart-header"><h3>Trazabilidad Semanal</h3></div><div class="chart-container"><canvas id="chartDevSemanal"></canvas></div></div>
             </div>
         </section>
 
+        <!-- 11. INVENTARIO -->
         <section id="inventario" class="section">
             <div class="page-title">Control de Inventario</div>
             <div class="filter-container">
@@ -221,6 +290,7 @@
             <div class="chart-card"><div class="chart-header"><h3>Ajustes Negativos por Semana</h3></div><div class="chart-container"><canvas id="chartInvNegativos"></canvas></div></div>
         </section>
 
+        <!-- 12. SEGUNDA D'S -->
         <section id="segunda" class="section">
             <div class="page-title">Flujo Integral Segunda D'S</div>
             <div class="chart-card mt-4" style="border-left: 5px solid var(--accent);">
