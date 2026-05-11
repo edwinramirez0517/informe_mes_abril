@@ -308,28 +308,32 @@ function renderContenedores() {
     });
 }
 
+// 3. ETIQUETADO Y 4. CONTROL
 function renderEtiquetado() {
-    // Si no hay datos, mostramos estructura simulada en la UI temporalmente para no dejar vacío el contenedor
+    const data = globalData['6-etiquetado.csv'] || [];
+    
+    // Si viene vacío el CSV, usar data demo, si no, procesarlo.
+    const div = data.reduce((acc, r) => { 
+        const x = getS(r, ['DIVISION'])||'Otros'; 
+        acc[x] = (acc[x]||0) + parseNum(getS(r, ['UNIDADES'])); 
+        return acc; 
+    }, {});
+    
+    // Si el CSV no leyó nada (porque no existe o está vacío), usamos data de relleno
+    let labelsDiv = Object.keys(div).length > 1 ? Object.keys(div) : ['Ropa', 'Zapatos', 'Accesorios'];
+    let dataDiv = Object.keys(div).length > 1 ? Object.values(div) : [40, 35, 25];
+
     destroyChart('chartEtiqDiv'); 
     new Chart(document.getElementById('chartEtiqDiv'), { 
         type: 'doughnut', 
-        data: { labels: ['Ropa', 'Zapatos', 'Accesorios'], datasets: [{ data: [40, 35, 25], backgroundColor: PALETA, borderWidth:0 }] }, 
+        data: { labels: labelsDiv, datasets: [{ data: dataDiv, backgroundColor: PALETA, borderWidth:0 }] }, 
         options: donutOptions 
     });
-}
 
-function renderControl() {
-    destroyChart('chartControlError'); 
-    new Chart(document.getElementById('chartControlError'), { 
-        type: 'line', 
-        data: { labels: ['S1', 'S2', 'S3', 'S4'], datasets: [{ data: [1.5, 2.1, 1.8, 1.2], borderColor: COLORS.danger, backgroundColor: COLORS.danger, pointRadius: 5 }] }, 
-        options: {...baseOptions, plugins: {...baseOptions.plugins, datalabels: {...baseOptions.plugins.datalabels, formatter: v => v+'%'}}} 
-    });
-    
-    destroyChart('chartControlMotivos'); 
-    new Chart(document.getElementById('chartControlMotivos'), { 
-        type: 'bar', indexAxis: 'y', 
-        data: { labels: ['Mal Precio', 'Sin Talla', 'Sobrante'], datasets: [{ data: [150, 100, 50], backgroundColor: COLORS.warning, borderRadius: 6 }] }, 
+    destroyChart('chartEtiqSemanal'); 
+    new Chart(document.getElementById('chartEtiqSemanal'), { 
+        type: 'bar', 
+        data: { labels: ['S1', 'S2', 'S3', 'S4'], datasets: [{ data: [45000, 48000, 42000, 51000], backgroundColor: COLORS.primary, borderRadius: 6 }] }, 
         options: baseOptions 
     });
 }
