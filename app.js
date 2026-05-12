@@ -1,60 +1,43 @@
 // ==========================================
-// CONFIGURACIÓN GLOBAL VISUAL Y UTILS (NUEVO ESTILO SIN EJES Y TOP 20)
+// CONFIGURACIÓN GLOBAL VISUAL Y UTILS
 // ==========================================
 Chart.register(ChartDataLabels);
 
-const COLORS = { primary: '#1a237e', primaryLight: '#3949ab', accent: '#ff6f00', accentLight: '#ffa040', success: '#2e7d32', danger: '#c62828', warning: '#fbc02d', gray: '#7f8c8d', labelBg: 'rgba(255,255,255,0.95)', primaryDark: '#0d1642' };
+const COLORS = { primary: '#1a237e', primaryLight: '#3949ab', accent: '#ff6f00', accentLight: '#ffa040', success: '#2e7d32', danger: '#c62828', warning: '#fbc02d', gray: '#7f8c8d', labelBg: 'rgba(255,255,255,0.9)' };
 const PALETA = [COLORS.primary, COLORS.accent, COLORS.success, '#3949ab', '#ffa040', '#5c6bc0', '#ff8f00', '#43a047', '#e74c3c', '#9b59b6', '#34495e', '#16a085', '#27ae60', '#f39c12', '#d35400'];
 
-// ESTILO MINIMALISTA (SIN EJES)
 const baseOptions = {
     responsive: true, maintainAspectRatio: false,
     scales: { 
-        x: { display: false }, // OCULTAR EJE X
-        y: { display: false }  // OCULTAR EJE Y
+        x: { grid: { display: false }, ticks: { font: { family: "'Inter', sans-serif", weight: '600' }, maxRotation: 45, minRotation: 0, autoSkip: true } }, 
+        y: { grid: { color: '#f0f2f5' }, border: {display: false}, ticks: { font: {family: "'Inter', sans-serif"} } } 
     },
-    layout: { padding: { top: 40, bottom: 10, left: 15, right: 15 } },
+    layout: { padding: { top: 35 } },
     plugins: {
         legend: { display: false }, 
         tooltip: { enabled: true },
         datalabels: {
-            anchor: 'end', align: 'top', color: COLORS.primaryDark, backgroundColor: COLORS.labelBg, borderRadius: 6, borderWidth: 1, borderColor: 'rgba(0,0,0,0.05)', font: { weight: '800', size: 10, family: "'Poppins', sans-serif" }, padding: 4,
+            anchor: 'end', align: 'top', color: COLORS.primary, backgroundColor: COLORS.labelBg, borderRadius: 4, borderWidth: 1, borderColor: 'rgba(0,0,0,0.1)', font: { weight: '800', size: 11, family: "'Poppins', sans-serif" }, padding: 4,
             display: function(context) {
-                // REGLA ANTI-CAOS: Ocultar etiquetas si hay más de 20 elementos o si el valor es 0
-                return context.chart.data.labels.length <= 20 && context.dataset.data[context.dataIndex] !== 0;
+                // REGLA ANTI-CAOS: Ocultar etiquetas si hay más de 12 elementos o si el valor es 0
+                return context.chart.data.labels.length <= 12 && context.dataset.data[context.dataIndex] !== 0;
             },
             formatter: (v) => { if (!v || v === 0) return ''; if (v >= 1000000) return (v/1000000).toFixed(1) + 'M'; if (v >= 1000) return (v/1000).toFixed(1) + 'K'; return v.toLocaleString('en-US'); }
         }
     }
 };
 
-// OPCIONES PARA GRÁFICOS DONDE SÍ QUEREMOS VER LOS NOMBRES ABAJO (EJE X)
-const baseOptionsWithX = JSON.parse(JSON.stringify(baseOptions));
-baseOptionsWithX.scales.x = { 
-    display: true, 
-    grid: { display: false },
-    ticks: { font: { family: "'Inter', sans-serif", weight: '600', size: 10 }, color: '#64748b', maxRotation: 45, minRotation: 0, autoSkip: true } 
-};
-
 const donutOptions = {
-    responsive: true, maintainAspectRatio: false, cutout: '70%',
+    responsive: true, maintainAspectRatio: false, cutout: '65%',
     plugins: { 
-        legend: { position: 'right', labels: { font: { family: "'Inter', sans-serif", size: 11, weight: '600' }, color: '#475569', boxWidth: 12 } }, 
+        legend: { position: 'right', labels: { font: { family: "'Inter', sans-serif", size: 11, weight: '600' } } }, 
         datalabels: { 
-            color: '#ffffff', font: { weight: '800', size: 11, family: "'Poppins', sans-serif" }, textStrokeColor: 'rgba(0,0,0,0.5)', textStrokeWidth: 2, 
+            color: '#ffffff', font: { weight: '800', size: 12, family: "'Poppins', sans-serif" }, textStrokeColor: 'rgba(0,0,0,0.6)', textStrokeWidth: 2, 
             display: function(context) { return context.dataset.data[context.dataIndex] > 0; }, // Solo mostrar si es mayor a 0
             formatter: (v) => v > 0 ? (v >= 1000 ? (v/1000).toFixed(1) + 'K' : v.toLocaleString('en-US')) : '' 
         } 
     }
 };
-
-// OPCIONES PARA BARRAS HORIZONTALES
-const horizontalBarOptions = {
-    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-    scales: { x: { display: false }, y: { display: false } },
-    plugins: { legend: { display: false }, tooltip: { enabled: true }, datalabels: { display: false } }
-};
-
 
 let globalData = {};
 
@@ -86,7 +69,7 @@ async function cargarCSV(file) {
 // INICIALIZADOR PRINCIPAL
 // ==========================================
 async function cargarTodo() {
-    console.log("Cargando todos los archivos del ERP (Versión Limpia Top 20, Integración Completa)...");
+    console.log("Cargando todos los archivos del ERP...");
     const archivos = [
         '0-seguimiento_objetivos.csv', '1-recepcion_nacional.csv', '2-recepcion_internacional.csv', 
         '3-tiempo_descarga.csv', '4-reclamos.csv', '5-ajustes.csv', '6-etiquetado.csv', 
@@ -111,52 +94,81 @@ async function cargarTodo() {
     try { renderReclamosAjustes(); } catch(e) { console.error("Error en Reclamos/Ajustes:", e); }
     try { renderDevoluciones('global'); } catch(e) { console.error("Error en Devoluciones:", e); }
     try { renderInventario('global'); } catch(e) { console.error("Error en Inventario:", e); }
-    try { renderSegunda('global'); } catch(e) { console.error("Error en Segunda:", e); }
+    try { renderSegunda(); } catch(e) { console.error("Error en Segunda:", e); }
 }
 
 // ==========================================
-// 0. RESUMEN EJECUTIVO (PANEL VISUAL)
+// 0. RESUMEN EJECUTIVO (CORREGIDO - UNA SOLA TARJETA POR ÁREA)
 // ==========================================
 function renderResumen() {
     const data = globalData['0-seguimiento_objetivos.csv'] || [];
-    const vGrid = document.getElementById('resumen-visual-grid');
-    if(!vGrid) return;
-    vGrid.innerHTML = '';
+    const tbody = document.querySelector('#tabla-seguimiento tbody');
+    const gContainer = document.getElementById('gauge-container');
+    
+    if(!tbody || !gContainer) return;
+
+    tbody.innerHTML = ''; gContainer.innerHTML = '';
+    
+    // Agrupar por Área y obtener solo la fila del día más reciente
+    const areasMap = {};
+    data.forEach(row => {
+        const area = getS(row, ['ÁREA', 'AREA', 'AREA ']);
+        if (!area) return;
+        const dia = parseNum(getS(row, ['DÍA DEL MES', 'DIA DEL MES']));
+        if (!areasMap[area] || dia > areasMap[area].dia) {
+            areasMap[area] = { row: row, dia: dia };
+        }
+    });
+
+    const latestData = Object.values(areasMap).map(item => item.row);
     let sumPct = 0; let count = 0;
     
-    data.forEach((row, i) => {
-        const area = getS(row, ['AREA', 'ÁREA', 'AREA ']) || 'Operación';
+    latestData.forEach((row, i) => {
+        const area = getS(row, ['ÁREA', 'AREA', 'AREA ']) || 'Operación';
         const meta = parseNum(getS(row, ['META MENSUAL', 'META']));
-        const real = parseNum(getS(row, ['UNIDADES ACUMULADAS', 'REAL', ' REAL ']));
+        const real = parseNum(getS(row, ['ACUM REAL', 'UNIDADES ACUMULADAS', 'REAL']));
+        
         if(meta === 0 && real === 0) return;
-        const dif = real - meta; const pct = meta > 0 ? (real/meta)*100 : 0;
+
+        const dif = real - meta;
+        const pct = meta > 0 ? (real/meta)*100 : 0;
         let color = pct >= 90 ? COLORS.success : (pct >= 75 ? COLORS.warning : COLORS.danger);
+
+        tbody.innerHTML += `<tr>
+            <td class="text-left">${area}</td>
+            <td>${meta.toLocaleString('en-US')}</td>
+            <td>${real.toLocaleString('en-US')}</td>
+            <td style="color:${dif<0?COLORS.danger:COLORS.success}; font-weight:700;">${dif>0?'+':''}${dif.toLocaleString('en-US')}</td>
+            <td><span class="pct-badge" style="background-color:${color};">${pct.toFixed(2)}%</span></td>
+        </tr>`;
+        
         sumPct += pct; count++;
 
-        vGrid.innerHTML += `
-            <div class="area-card" style="border-left-color: ${color}">
-                <div class="area-header">
-                    <div><div class="area-title">${area}</div><div style="font-size:0.8rem; color:#64748b; font-weight:700;">Meta: ${meta.toLocaleString('en-US')}</div></div>
-                    <div class="area-pct" style="color:${color}">${pct.toFixed(1)}%</div>
-                </div>
-                <div class="area-visuals">
-                    <div class="mini-gauge"><canvas id="gauge-${i}"></canvas></div>
-                    <div class="mini-bar-container">
-                        <div style="font-size:0.7rem; font-weight:800; color:#94a3b8; text-transform:uppercase;">Real vs Meta</div>
-                        <canvas id="bar-${i}"></canvas>
-                        <div style="font-size:0.85rem; font-weight:800; color:${dif<0?COLORS.danger:COLORS.success}; text-align:right; margin-top:5px;">${dif>0?'+':''}${dif.toLocaleString('en-US')}</div>
-                    </div>
-                </div>
-            </div>`;
-        setTimeout(() => {
-            new Chart(document.getElementById(`gauge-${i}`), { type: 'doughnut', data: { datasets: [{ data: [pct, Math.max(0, 100-pct)], backgroundColor: [color, '#f1f5f9'], borderWidth: 0 }] }, options: { cutout: '75%', circumference: 360, rotation: 0, plugins: { datalabels: {display:false}, tooltip:{enabled:false} } } });
-            new Chart(document.getElementById(`bar-${i}`), { type: 'bar', data: { labels: ['R', 'M'], datasets: [{ data: [real, meta], backgroundColor: [color, '#e2e8f0'], borderRadius: 4 }] }, options: horizontalBarOptions });
-        }, 100);
+        if(i < 4) {
+            const gid = `gauge-${i}`;
+            gContainer.innerHTML += `
+                <div class="gauge-card">
+                    <div class="gauge-container"><canvas id="${gid}"></canvas></div>
+                    <div class="gauge-title">${area}</div>
+                    <div class="gauge-value" style="color:${color}">${pct.toFixed(1)}%</div>
+                </div>`;
+            setTimeout(() => { 
+                new Chart(document.getElementById(gid), { 
+                    type: 'doughnut', 
+                    data: { datasets: [{ data: [pct, Math.max(0, 100-pct)], backgroundColor: [color, '#f1f5f9'], borderWidth: 0 }] }, 
+                    options: { cutout: '80%', circumference: 180, rotation: 270, plugins: { datalabels: {display:false}, tooltip:{enabled:false} } } 
+                }); 
+            }, 100);
+        }
     });
 
     let prom = count > 0 ? (sumPct/count) : 0;
     destroyChart('chartResumenGeneral');
-    new Chart(document.getElementById('chartResumenGeneral'), { type: 'line', data: { labels: ['S1', 'S2', 'S3', 'Actual'], datasets: [{ label: 'Global %', data: [70, 78, 85, prom], borderColor: COLORS.primary, fill: true, backgroundColor: 'rgba(26, 35, 126, 0.05)', tension: 0.4, pointRadius: 5 }] }, options: { ...baseOptionsWithX, plugins: { ...baseOptionsWithX.plugins, datalabels: { ...baseOptionsWithX.plugins.datalabels, formatter: v => v.toFixed(1) + '%' } } } });
+    new Chart(document.getElementById('chartResumenGeneral'), { 
+        type: 'line', 
+        data: { labels: ['S1', 'S2', 'S3', 'Actual'], datasets: [{ label: 'Global %', data: [70, 78, 85, prom], borderColor: COLORS.primary, fill: true, backgroundColor: 'rgba(26, 35, 126, 0.1)', tension: 0.4 }] }, 
+        options: {...baseOptions, plugins: {...baseOptions.plugins, datalabels: {...baseOptions.plugins.datalabels, formatter: v => v.toFixed(1) + '%'}}} 
+    });
 }
 
 // ==========================================
@@ -167,12 +179,11 @@ function renderRecepcion(f) {
     const inter = globalData['2-recepcion_internacional.csv'] || [];
     let d = f === 'global' ? [...nac, ...inter] : (f === 'nacional' ? nac : inter);
 
-    const semObj = {}; const divObj = {}; const yoyObj = {}; const pvObj = {}; let totalCosto = 0; let totalUnd = 0;
+    const semObj = {}; const divObj = {}; const yoyObj = {}; const pvObj = {}; let totalCosto = 0;
     
     d.forEach(r => {
         const u = parseNum(getS(r, ['SUMA DE CANTIDAD', 'CANTIDAD', 'UNIDADES'])); 
         const c = parseNum(getS(r, ['SUMA DE COSTOIMPORTACIONTOTAL', 'COSTO TOTAL', 'COSTO']));
-        totalUnd += u;
         
         semObj[getS(r, ['SEMANA', 'SEM'])||'SN'] = (semObj[getS(r, ['SEMANA', 'SEM'])||'SN']||0) + u;
         divObj[getS(r, ['DIVISIONNOMBRE', 'DIVISION', 'DIVISIÓN'])||'Otros'] = (divObj[getS(r, ['DIVISIONNOMBRE', 'DIVISION', 'DIVISIÓN'])||'Otros']||0) + u;
@@ -184,21 +195,18 @@ function renderRecepcion(f) {
         totalCosto += c;
     });
 
-    setKPI('kpi-rec-und', totalUnd);
-
-    // TOP 20 Divisiones para que no se amontone
     let divArray = Object.keys(divObj).map(k => ({n: k, v: divObj[k]}));
     divArray.sort((a,b) => b.v - a.v);
-    let topDivs = divArray.slice(0, 15);
+    let topDivs = divArray.slice(0, 20);
 
     destroyChart('chartRecSemanal'); 
-    new Chart(document.getElementById('chartRecSemanal'), { type: 'line', data: { labels: Object.keys(semObj).sort(), datasets: [{ data: Object.keys(semObj).sort().map(k=>semObj[k]), borderColor: COLORS.success, backgroundColor: 'rgba(46,125,50,0.05)', fill: true, tension: 0.3 }] }, options: baseOptionsWithX });
+    new Chart(document.getElementById('chartRecSemanal'), { type: 'line', data: { labels: Object.keys(semObj).sort(), datasets: [{ data: Object.keys(semObj).sort().map(k=>semObj[k]), borderColor: COLORS.success, backgroundColor: 'rgba(46,125,50,0.1)', fill: true, tension: 0.3 }] }, options: baseOptions });
     
     destroyChart('chartRecDivision'); 
-    new Chart(document.getElementById('chartRecDivision'), { type: 'bar', data: { labels: topDivs.map(x=>x.n), datasets: [{ data: topDivs.map(x=>x.v), backgroundColor: PALETA, borderRadius: 6 }] }, options: baseOptionsWithX });
+    new Chart(document.getElementById('chartRecDivision'), { type: 'bar', data: { labels: topDivs.map(x=>x.n), datasets: [{ data: topDivs.map(x=>x.v), backgroundColor: PALETA, borderRadius: 6 }] }, options: baseOptions });
     
     destroyChart('chartRecYoY'); 
-    new Chart(document.getElementById('chartRecYoY'), { type: 'bar', data: { labels: Object.keys(yoyObj), datasets: [{ data: Object.values(yoyObj), backgroundColor: [COLORS.gray, COLORS.primary], borderRadius: 6 }] }, options: baseOptionsWithX });
+    new Chart(document.getElementById('chartRecYoY'), { type: 'bar', data: { labels: Object.keys(yoyObj), datasets: [{ data: Object.values(yoyObj), backgroundColor: [COLORS.gray, COLORS.primary], borderRadius: 6 }] }, options: baseOptions });
 
     const tb = document.querySelector('#tableRecProveedores tbody');
     if(tb) {
@@ -236,34 +244,37 @@ function renderContenedores() {
             filas += `<tr>
                 <td class="text-left">${cont}</td>
                 <td>${p}</td>
-                <td class="text-center"><span class="badge-pct" style="background:${COLORS.gray};">${parseNum(getS(r, ['PERSONAL']))}</span></td>
+                <td><span class="badge-pct" style="background:${COLORS.gray};">${parseNum(getS(r, ['PERSONAL']))}</span></td>
                 <td>${t||'00:00'}</td>
-                <td style="font-weight:800;">${parseNum(getS(r, ['MINUTOD POR PERSONA', 'MINUTOS POR PERSONA']))} min</td>
+                <td>${parseNum(getS(r, ['MINUTOD POR PERSONA', 'MINUTOS POR PERSONA']))} min</td>
                 <td class="text-right" style="color:${COLORS.danger};">L ${parseNum(getS(r, ['COSTO TOTAL'])).toLocaleString('en-US',{minimumFractionDigits:2})}</td>
             </tr>`; 
         }
     });
 
     destroyChart('chartContTiempos'); 
-    new Chart(document.getElementById('chartContTiempos'), { type: 'bar', data: { labels: Object.keys(pts), datasets: [{ data: Object.keys(pts).map(p => pts[p].c>0 ? (pts[p].s/pts[p].c/60).toFixed(1):0), backgroundColor: PALETA, borderRadius: 6 }] }, options: {...baseOptionsWithX, plugins: {...baseOptionsWithX.plugins, datalabels: {...baseOptionsWithX.plugins.datalabels, formatter: v => v>0?v+' h':''}}} });
+    new Chart(document.getElementById('chartContTiempos'), { type: 'bar', data: { labels: Object.keys(pts), datasets: [{ data: Object.keys(pts).map(p => pts[p].c>0 ? (pts[p].s/pts[p].c/60).toFixed(1):0), backgroundColor: PALETA, borderRadius: 6 }] }, options: {...baseOptions, plugins: {...baseOptions.plugins, datalabels: {...baseOptions.plugins.datalabels, formatter: v => v>0?v+' h':''}}} });
     
     destroyChart('chartContCostos'); 
-    new Chart(document.getElementById('chartContCostos'), { type: 'line', data: { labels: Object.keys(sem).sort(), datasets: [{ data: Object.keys(sem).sort().map(s=>sem[s]), borderColor: COLORS.accent, backgroundColor: 'rgba(255,111,0,0.05)', fill: true, tension: 0.3 }] }, options: {...baseOptionsWithX, plugins: {...baseOptionsWithX.plugins, datalabels: {...baseOptionsWithX.plugins.datalabels, formatter: v => 'L '+(v/1000).toFixed(1)+'K'}}} });
+    new Chart(document.getElementById('chartContCostos'), { type: 'line', data: { labels: Object.keys(sem).sort(), datasets: [{ data: Object.keys(sem).sort().map(s=>sem[s]), borderColor: COLORS.accent, backgroundColor: 'rgba(255,111,0,0.1)', fill: true, tension: 0.3 }] }, options: {...baseOptions, plugins: {...baseOptions.plugins, datalabels: {...baseOptions.plugins.datalabels, formatter: v => 'L '+(v/1000).toFixed(1)+'K'}}} });
     
     const tbc = document.querySelector('#tableContenedores tbody'); 
     if(tbc) tbc.innerHTML = filas;
 }
 
 // ==========================================
-// 3. ETIQUETADO Y 4. CONTROL (FILTRO 2026)
+// 3. ETIQUETADO (CORREGIDO - FILTRO 2026 Y PRODUCCIÓN)
 // ==========================================
 function renderEtiquetado() {
     const d = globalData['6-etiquetado.csv'] || [];
-    const d2026 = d.filter(r => getS(r, ['AÑO', 'ANO']).toString() === '2026');
+    // Filtrar para que solo procese las filas que tengan 2026 en su fecha/año
+    const d2026 = d.filter(r => getS(r, ['FECHA', 'AÑO', 'ANO']).toString().includes('2026'));
+    
     let tot = 0; const divObj = {}; const semObj = {};
     
     d2026.forEach(r => { 
-        const u = parseNum(getS(r, ['UNIDADES', 'CANTIDAD', 'TOTAL', 'PRODUCCION', 'PRODUCCIÓN'])); 
+        // Agregada la palabra PRODUCCION que es la que viene en tu Excel
+        const u = parseNum(getS(r, ['PRODUCCION', 'PRODUCCIÓN', 'UNIDADES', 'CANTIDAD', 'TOTAL'])); 
         tot += u; 
         divObj[getS(r, ['DIVISION2', 'DIVISION', 'DIVISIÓN', 'DEPARTAMENTO', 'AREA', 'ÁREA'])||'Otros'] = (divObj[getS(r, ['DIVISION2', 'DIVISION', 'DIVISIÓN', 'DEPARTAMENTO', 'AREA', 'ÁREA'])||'Otros']||0) + u; 
         semObj[getS(r, ['SEMANA', 'SEM', 'FECHA'])||'SN'] = (semObj[getS(r, ['SEMANA', 'SEM', 'FECHA'])||'SN']||0) + u; 
@@ -275,54 +286,72 @@ function renderEtiquetado() {
 
     let divArray = Object.keys(divObj).map(k => ({n: k, v: divObj[k]}));
     divArray.sort((a,b) => b.v - a.v);
-    let topDivs = divArray.slice(0, 15); 
+    let topDivs = divArray.slice(0, 15);
     
     destroyChart('chartEtiqDiv'); 
     new Chart(document.getElementById('chartEtiqDiv'), { type: 'doughnut', data: { labels: topDivs.map(x=>x.n), datasets: [{ data: topDivs.map(x=>x.v), backgroundColor: PALETA, borderWidth:0 }] }, options: donutOptions });
     
     destroyChart('chartEtiqSemanal'); 
-    new Chart(document.getElementById('chartEtiqSemanal'), { type: 'bar', data: { labels: Object.keys(semObj).sort(), datasets: [{ data: Object.keys(semObj).sort().map(k=>semObj[k]), backgroundColor: COLORS.primary, borderRadius: 6 }] }, options: baseOptionsWithX });
+    new Chart(document.getElementById('chartEtiqSemanal'), { type: 'bar', data: { labels: Object.keys(semObj).sort(), datasets: [{ data: Object.keys(semObj).sort().map(k=>semObj[k]), backgroundColor: COLORS.primary, borderRadius: 6 }] }, options: baseOptions });
 }
 
+// ==========================================
+// 4. CONTROL Y ETIQUETADO (CORREGIDO - ARCHIVOS SEPARADOS)
+// ==========================================
 function renderControl() {
-    const d = globalData['8-control y etiquetado_errores.csv'] || [];
-    let bultos = 0; let errUnd = 0; const motObj = {}; const semObj = {};
-    
-    d.forEach(r => { 
+    // 1. Archivo de productividad (Bultos Revisados)
+    const prod = globalData['7-control y etiquetado_produccion.csv'] || [];
+    let bultos = 0;
+    prod.forEach(r => {
+        bultos += parseNum(getS(r, ['BULTOS', 'CANTIDAD BULTOS', 'FARDOS']));
+    });
+
+    // 2. Archivo de errores
+    const err = globalData['8-control y etiquetado_errores.csv'] || [];
+    let errUnd = 0; const motObj = {}; const semObj = {};
+    err.forEach(r => { 
         const e = parseNum(getS(r, ['UNIDADES ERROR', 'UNIDADES', 'ERROR', 'CANTIDAD'])); 
-        const b = parseNum(getS(r, ['BULTOS', 'CANTIDAD BULTOS', 'FARDOS'])); 
-        bultos += b; errUnd += e; 
+        errUnd += e; 
         motObj[getS(r, ['MOTIVO', 'TIPO ERROR'])||'Otros'] = (motObj[getS(r, ['MOTIVO', 'TIPO ERROR'])||'Otros']||0) + e; 
         const s = getS(r, ['SEMANA', 'SEM'])||'SN'; 
         if(!semObj[s]) semObj[s] = {b:0, e:0}; 
-        semObj[s].b += b; semObj[s].e += e; 
+        // Solo guardamos los errores para la gráfica semanal
+        semObj[s].e += e; 
     });
 
+    // Calcular KPI comparando los dos archivos
     let globalPct = bultos > 0 ? (errUnd/(bultos*50))*100 : 0; 
     setKPI('kpi-control-bultos', bultos); 
     setKPI('kpi-control-und', errUnd); 
     setKPI('kpi-control-pct', globalPct, false, true);
     
     destroyChart('chartControlError'); 
-    new Chart(document.getElementById('chartControlError'), { type: 'line', data: { labels: Object.keys(semObj).sort(), datasets: [{ data: Object.keys(semObj).sort().map(k => semObj[k].b > 0 ? (semObj[k].e/(semObj[k].b*50))*100 : 0), borderColor: COLORS.danger, backgroundColor: 'rgba(198,40,40,0.05)', fill: true, pointRadius: 5 }] }, options: {...baseOptionsWithX, plugins: {...baseOptionsWithX.plugins, datalabels: {...baseOptionsWithX.plugins.datalabels, formatter: v => v.toFixed(2)+'%'}}} });
+    new Chart(document.getElementById('chartControlError'), { type: 'line', data: { labels: Object.keys(semObj).sort(), datasets: [{ data: Object.keys(semObj).sort().map(k => semObj[k].e), borderColor: COLORS.danger, backgroundColor: COLORS.danger, pointRadius: 5 }] }, options: {...baseOptions, plugins: {...baseOptions.plugins, datalabels: {...baseOptions.plugins.datalabels, formatter: v => v.toLocaleString()}}} });
     
     destroyChart('chartControlMotivos'); 
-    new Chart(document.getElementById('chartControlMotivos'), { type: 'bar', indexAxis: 'y', data: { labels: Object.keys(motObj), datasets: [{ data: Object.values(motObj), backgroundColor: COLORS.warning, borderRadius: 6 }] }, options: horizontalBarOptions });
+    new Chart(document.getElementById('chartControlMotivos'), { type: 'bar', indexAxis: 'y', data: { labels: Object.keys(motObj), datasets: [{ data: Object.values(motObj), backgroundColor: COLORS.warning, borderRadius: 6 }] }, options: baseOptions });
 }
 
 // ==========================================
-// 5. DISTRIBUCIÓN (TOP 20 ANTI-CAOS Y DUPLICADOS)
+// 5. DISTRIBUCIÓN (CORREGIDO - FILTRO 2026 Y COLUMNAS DOBLES)
 // ==========================================
 function renderDistribucion(f) {
     const d = globalData['9-distribucion.csv'] || [];
-    let dFilt = f === 'global' ? d : d.filter(r => tipoTienda(getS(r, ['TIENDA', 'DESTINO', 'SUCURSAL'])) === f);
+    
+    // Filtrar estrictamente la data de 2026
+    const d2026 = d.filter(r => getS(r, ['FECHA', 'AÑO', 'ANO', 'SEMANA']).toString().includes('2026') || getS(r, ['FECHA']).toString().includes('/26'));
+    let dFilt = f === 'global' ? d2026 : d2026.filter(r => tipoTienda(getS(r, ['DESTINO', 'TIENDA', 'SUCURSAL'])) === f);
     
     let uTot = 0; let bTot = 0; const compObj = {}; const semObj = {}; const divObj = {u:[], b:[]}; const tObj = {};
     
     dFilt.forEach(r => {
+        // La aspiradora: Suma las columnas originales, y si están vacías, prueba con las .1
         let u = parseNum(getS(r, ['UNIDADES'])); if(u===0) u = parseNum(getS(r, ['UNIDADES.1', 'CANTIDAD']));
         let b = parseNum(getS(r, ['BULTOS'])); if(b===0) b = parseNum(getS(r, ['BULTOS.1', 'FARDOS']));
+        
         uTot += u; bTot += b;
+        
+        // Caza el "Tipo Trasferencias" que traía tu Excel
         compObj[getS(r, ['TIPO TRASFERENCIAS', 'TIPO TRANSFERENCIA', 'COMPAÑIA', 'COMPAÑÍA'])||'Otros'] = (compObj[getS(r, ['TIPO TRASFERENCIAS', 'TIPO TRANSFERENCIA', 'COMPAÑIA', 'COMPAÑÍA'])||'Otros']||0) + b;
         semObj[getS(r, ['SEMANA', 'SEM'])||'SN'] = (semObj[getS(r, ['SEMANA', 'SEM'])||'SN']||0) + b;
         
@@ -330,7 +359,7 @@ function renderDistribucion(f) {
         if(!divObj[div]) divObj[div] = {u:0, b:0}; 
         divObj[div].u += u; divObj[div].b += b;
         
-        const t = getS(r, ['TIENDA', 'DESTINO', 'SUCURSAL'])||'Otros'; 
+        const t = getS(r, ['DESTINO', 'TIENDA', 'SUCURSAL'])||'Otros'; 
         if(!tObj[t]) tObj[t] = {u:0, b:0}; 
         tObj[t].u += u; tObj[t].b += b;
     });
@@ -339,7 +368,6 @@ function renderDistribucion(f) {
     setKPI('kpi-dist-bul', bTot); 
     setKPI('kpi-dist-err', 0, false, true); 
     
-    // TOP 20 para Divisiones
     let divArray = Object.keys(divObj).map(k => ({name:k, u: divObj[k].u, b: divObj[k].b}));
     divArray.sort((a,b) => b.u - a.u);
     let topDivs = divArray.slice(0, 20);
@@ -348,7 +376,7 @@ function renderDistribucion(f) {
     new Chart(document.getElementById('chartDistComp'), { type: 'doughnut', data: { labels: Object.keys(compObj), datasets: [{ data: Object.values(compObj), backgroundColor: PALETA, borderWidth:0 }] }, options: donutOptions });
     
     destroyChart('chartDistSemanal'); 
-    new Chart(document.getElementById('chartDistSemanal'), { type: 'line', data: { labels: Object.keys(semObj).sort(), datasets: [{ data: Object.keys(semObj).sort().map(k=>semObj[k]), borderColor: COLORS.primary, fill:true, backgroundColor:'rgba(26, 35, 126, 0.05)', tension: 0.3 }] }, options: baseOptionsWithX });
+    new Chart(document.getElementById('chartDistSemanal'), { type: 'line', data: { labels: Object.keys(semObj).sort(), datasets: [{ data: Object.keys(semObj).sort().map(k=>semObj[k]), borderColor: COLORS.primary, fill:true, backgroundColor:'rgba(26, 35, 126, 0.1)', tension: 0.3 }] }, options: baseOptions });
 
     destroyChart('chartDistDiv'); 
     new Chart(document.getElementById('chartDistDiv'), { 
@@ -360,7 +388,7 @@ function renderDistribucion(f) {
                 { label:'Bultos', data: topDivs.map(x=>x.b), backgroundColor: COLORS.accent }
             ] 
         }, 
-        options: {...baseOptionsWithX, plugins: { legend: {display:true}, datalabels: {display: false} } } // Oculto números para que no choque
+        options: {...baseOptions, plugins: { legend: {display:true}, datalabels: {display: false} } } 
     });
     
     const tb = document.querySelector('#tableDistTiendas tbody');
@@ -374,7 +402,7 @@ function renderDistribucion(f) {
 }
 
 // ==========================================
-// 6. DESPACHO LOGÍSTICO Y COMERCIAL (TOP 20)
+// 6. DESPACHO LOGÍSTICO Y COMERCIAL
 // ==========================================
 function renderDespachos() {
     const env = globalData['10-envios.csv'] || []; 
@@ -404,12 +432,11 @@ function renderDespachos() {
     setKPI('kpi-desp-bul', bEnv); setKPI('kpi-desp-und', uEnv); setKPI('kpi-desp-cumpl', 100, false, true); 
     setKPI('kpi-com-env', uEnv); setKPI('kpi-com-ven', uVen); setKPI('kpi-com-pct', uEnv>0?(uVen/uEnv)*100:0, false, true);
 
-    destroyChart('chartDespachoSemanal'); new Chart(document.getElementById('chartDespachoSemanal'), { type: 'line', data: { labels: Object.keys(semObj).sort(), datasets: [{ data: Object.keys(semObj).sort().map(k=>semObj[k]), borderColor: COLORS.success, backgroundColor: 'rgba(46,125,50,0.05)', fill: true, tension: 0.3 }] }, options: baseOptionsWithX });
+    destroyChart('chartDespachoSemanal'); new Chart(document.getElementById('chartDespachoSemanal'), { type: 'line', data: { labels: Object.keys(semObj).sort(), datasets: [{ data: Object.keys(semObj).sort().map(k=>semObj[k]), borderColor: COLORS.success, backgroundColor: 'rgba(46,125,50,0.1)', fill: true, tension: 0.3 }] }, options: baseOptions });
     destroyChart('chartDespachoVentas'); new Chart(document.getElementById('chartDespachoVentas'), { type: 'bar', data: { labels: ['Logística (Enviado)', 'Comercial (Vendido)'], datasets: [{ data: [uEnv, uVen], backgroundColor: [COLORS.primary, COLORS.success], borderRadius: 6 }] }, options: baseOptions });
     destroyChart('chartDespTransp'); new Chart(document.getElementById('chartDespTransp'), { type: 'bar', data: { labels: Object.keys(transObj), datasets: [{ data: Object.values(transObj), backgroundColor: [COLORS.gray, COLORS.primaryLight], borderRadius: 6 }] }, options: baseOptions });
     destroyChart('chartDespCia'); new Chart(document.getElementById('chartDespCia'), { type: 'bar', data: { labels: Object.keys(ciaObj), datasets: [{ data: Object.values(ciaObj), backgroundColor: [COLORS.primary, COLORS.accent], borderRadius: 6 }] }, options: baseOptions });
     
-    // TOP 20 Comparativo de Divisiones
     let allDivs = [...new Set([...Object.keys(divEnv), ...Object.keys(divVen)])];
     let combined = allDivs.map(k => ({ name: k, total: (divEnv[k]||0) + (divVen[k]||0), env: divEnv[k]||0, ven: divVen[k]||0 }));
     combined.sort((a,b) => b.total - a.total);
@@ -421,11 +448,11 @@ function renderDespachos() {
         data: { 
             labels: top20.map(x=>x.name), 
             datasets: [
-                { label:'Enviado', data: top20.map(x=>x.env), backgroundColor: COLORS.primary }, 
-                { label:'Vendido', data: top20.map(x=>x.ven), backgroundColor: COLORS.success }
+                { label:'Enviado (Logística)', data: top20.map(x=>x.env), backgroundColor: COLORS.primary }, 
+                { label:'Vendido (Comercial)', data: top20.map(x=>x.ven), backgroundColor: COLORS.success }
             ] 
         }, 
-        options: {...baseOptionsWithX, plugins: { legend: {display:true}, datalabels: {display: false} } } 
+        options: {...baseOptions, plugins: { legend: {display:true}, datalabels: {display: false} } } 
     });
 
     const tb = document.querySelector('#tableDespTiendas tbody');
@@ -460,9 +487,9 @@ function renderAuditoria() {
 
     setKPI('kpi-aud-fact', fact); setKPI('kpi-aud-audit', audit); setKPI('kpi-aud-cob', fact>0?(audit/(fact*0.15))*100:0, false, true);
     
-    destroyChart('chartAudEmbudo'); new Chart(document.getElementById('chartAudEmbudo'), { type: 'bar', data: { labels: ['Facturado', 'Meta 15%', 'Auditado'], datasets: [{ data: [fact, fact*0.15, audit], backgroundColor: [COLORS.gray, COLORS.warning, COLORS.success], borderRadius: 6 }] }, options: baseOptions });
+    destroyChart('chartAudEmbudo'); new Chart(document.getElementById('chartAudEmbudo'), { type: 'bar', data: { labels: ['Facturado Total', 'Meta 15%', 'Auditado Real'], datasets: [{ data: [fact, fact*0.15, audit], backgroundColor: [COLORS.gray, COLORS.warning, COLORS.success], borderRadius: 6 }] }, options: baseOptions });
     destroyChart('chartAudCia'); new Chart(document.getElementById('chartAudCia'), { type: 'doughnut', data: { labels: Object.keys(cia), datasets: [{ data: Object.values(cia), backgroundColor: [COLORS.primary, COLORS.accent], borderWidth:0 }] }, options: donutOptions });
-    destroyChart('chartAudSemanal'); new Chart(document.getElementById('chartAudSemanal'), { type: 'line', data: { labels: Object.keys(sem).sort(), datasets: [{ data: Object.keys(sem).sort().map(k=>sem[k]), borderColor: COLORS.primaryLight, backgroundColor: 'rgba(57,73,171,0.05)', fill: true, tension: 0.3 }] }, options: baseOptionsWithX });
+    destroyChart('chartAudSemanal'); new Chart(document.getElementById('chartAudSemanal'), { type: 'line', data: { labels: Object.keys(sem).sort(), datasets: [{ data: Object.keys(sem).sort().map(k=>sem[k]), borderColor: COLORS.primaryLight, backgroundColor: 'rgba(57,73,171,0.1)', fill: true, tension: 0.3 }] }, options: baseOptions });
 
     const eObj = {}; 
     err.forEach(r => { 
@@ -495,8 +522,8 @@ function renderMayoreo() {
     });
     
     setKPI('kpi-may-rec', lps, true); setKPI('kpi-may-trans', t); setKPI('kpi-may-prom', lps/30, true);
-    destroyChart('chartMaySemanal'); new Chart(document.getElementById('chartMaySemanal'), { type: 'line', data: { labels: Object.keys(sem).sort(), datasets: [{ data: Object.keys(sem).sort().map(k=>sem[k]), borderColor: COLORS.success, backgroundColor: 'rgba(46,125,50,0.05)', fill: true, tension: 0.3 }] }, options: {...baseOptionsWithX, plugins: {...baseOptionsWithX.plugins, datalabels: {...baseOptionsWithX.plugins.datalabels, formatter: v => 'L '+(v/1000).toFixed(1)+'K'}}} });
-    destroyChart('chartMayCajero'); new Chart(document.getElementById('chartMayCajero'), { type: 'bar', data: { labels: Object.keys(caj), datasets: [{ data: Object.values(caj), backgroundColor: PALETA, borderRadius: 6 }] }, options: {...baseOptionsWithX, plugins: {...baseOptionsWithX.plugins, datalabels: {...baseOptionsWithX.plugins.datalabels, formatter: v => 'L '+(v/1000).toFixed(1)+'K'}}} });
+    destroyChart('chartMaySemanal'); new Chart(document.getElementById('chartMaySemanal'), { type: 'line', data: { labels: Object.keys(sem).sort(), datasets: [{ data: Object.keys(sem).sort().map(k=>sem[k]), borderColor: COLORS.success, backgroundColor: 'rgba(46,125,50,0.1)', fill: true, tension: 0.3 }] }, options: {...baseOptions, plugins: {...baseOptions.plugins, datalabels: {...baseOptions.plugins.datalabels, formatter: v => 'L '+(v/1000).toFixed(1)+'K'}}} });
+    destroyChart('chartMayCajero'); new Chart(document.getElementById('chartMayCajero'), { type: 'bar', data: { labels: Object.keys(caj), datasets: [{ data: Object.values(caj), backgroundColor: PALETA, borderRadius: 6 }] }, options: {...baseOptions, plugins: {...baseOptions.plugins, datalabels: {...baseOptions.plugins.datalabels, formatter: v => 'L '+(v/1000).toFixed(1)+'K'}}} });
     const tb = document.querySelector('#tableMayDetalle tbody'); if(tb) tb.innerHTML = filas;
 }
 
@@ -517,12 +544,12 @@ function renderReclamosAjustes() {
         if(!rProv[p]) rProv[p] = {u:0, c:0}; rProv[p].u += u; rProv[p].c += c; 
     });
     
-    destroyChart('chartRecProvSemanal'); new Chart(document.getElementById('chartRecProvSemanal'), { type: 'line', data: { labels: Object.keys(rSem).sort(), datasets: [{ data: Object.keys(rSem).sort().map(k=>rSem[k]), borderColor: COLORS.danger, fill: true, backgroundColor: 'rgba(198,40,40,0.05)', tension: 0.3 }] }, options: {...baseOptionsWithX, plugins: {...baseOptionsWithX.plugins, datalabels: {...baseOptionsWithX.plugins.datalabels, formatter: v => '$'+(v).toLocaleString()}}} });
+    destroyChart('chartRecProvSemanal'); new Chart(document.getElementById('chartRecProvSemanal'), { type: 'line', data: { labels: Object.keys(rSem).sort(), datasets: [{ data: Object.keys(rSem).sort().map(k=>rSem[k]), borderColor: COLORS.danger, fill: true, backgroundColor: 'rgba(198,40,40,0.1)', tension: 0.3 }] }, options: {...baseOptions, plugins: {...baseOptions.plugins, datalabels: {...baseOptions.plugins.datalabels, formatter: v => '$'+(v).toLocaleString()}}} });
     destroyChart('chartRecProvMotivos'); new Chart(document.getElementById('chartRecProvMotivos'), { type: 'doughnut', data: { labels: Object.keys(rMot), datasets: [{ data: Object.values(rMot), backgroundColor: PALETA, borderWidth:0 }] }, options: donutOptions });
     
     // Top 20 Reclamos Division
     let rDivArr = Object.keys(rDiv).map(k=>({n:k, v:rDiv[k]})).sort((a,b)=>b.v-a.v).slice(0,20);
-    destroyChart('chartRecProvDiv'); new Chart(document.getElementById('chartRecProvDiv'), { type: 'bar', data: { labels: rDivArr.map(x=>x.n), datasets: [{ data: rDivArr.map(x=>x.v), backgroundColor: COLORS.accent, borderRadius: 6 }] }, options: {...baseOptionsWithX, plugins: {...baseOptionsWithX.plugins, datalabels: {display:false}}} });
+    destroyChart('chartRecProvDiv'); new Chart(document.getElementById('chartRecProvDiv'), { type: 'bar', data: { labels: rDivArr.map(x=>x.n), datasets: [{ data: rDivArr.map(x=>x.v), backgroundColor: COLORS.accent, borderRadius: 6 }] }, options: {...baseOptions, plugins: {...baseOptions.plugins, datalabels: {display:false}}} });
     
     const tbR = document.querySelector('#tableRecProv tbody'); if(tbR) tbR.innerHTML = Object.entries(rProv).sort((a,b)=>b[1].c - a[1].c).slice(0,10).map(p => `<tr><td class="text-left">${p[0]}</td><td class="text-right">${p[1].u.toLocaleString()}</td><td class="text-right" style="color:${COLORS.danger}; font-weight:700">$ ${p[1].c.toLocaleString('en-US',{minimumFractionDigits:2})}</td></tr>`).join('');
 
@@ -538,12 +565,12 @@ function renderReclamosAjustes() {
     });
     
     let aDivUArr = Object.keys(aDivU).map(k=>({n:k, v:aDivU[k]})).sort((a,b)=>b.v-a.v).slice(0,20);
-    destroyChart('chartAjuDivUnd'); new Chart(document.getElementById('chartAjuDivUnd'), { type: 'bar', data: { labels: aDivUArr.map(x=>x.n), datasets: [{ data: aDivUArr.map(x=>x.v), backgroundColor: COLORS.primaryLight, borderRadius: 6 }] }, options: {...baseOptionsWithX, plugins: {datalabels: {display:false}}} });
+    destroyChart('chartAjuDivUnd'); new Chart(document.getElementById('chartAjuDivUnd'), { type: 'bar', data: { labels: aDivUArr.map(x=>x.n), datasets: [{ data: aDivUArr.map(x=>x.v), backgroundColor: COLORS.primaryLight, borderRadius: 6 }] }, options: {...baseOptions, plugins: {datalabels: {display:false}}} });
     
     let aDivCArr = Object.keys(aDivC).map(k=>({n:k, v:aDivC[k]})).sort((a,b)=>b.v-a.v).slice(0,20);
-    destroyChart('chartAjuDivCos'); new Chart(document.getElementById('chartAjuDivCos'), { type: 'bar', data: { labels: aDivCArr.map(x=>x.n), datasets: [{ data: aDivCArr.map(x=>x.v), backgroundColor: COLORS.danger, borderRadius: 6 }] }, options: {...baseOptionsWithX, plugins: {datalabels: {display:false}}} });
+    destroyChart('chartAjuDivCos'); new Chart(document.getElementById('chartAjuDivCos'), { type: 'bar', data: { labels: aDivCArr.map(x=>x.n), datasets: [{ data: aDivCArr.map(x=>x.v), backgroundColor: COLORS.danger, borderRadius: 6 }] }, options: {...baseOptions, plugins: {datalabels: {display:false}}} });
     
-    destroyChart('chartAjuSemanal'); new Chart(document.getElementById('chartAjuSemanal'), { type: 'line', data: { labels: Object.keys(aSem).sort(), datasets: [{ data: Object.keys(aSem).sort().map(k=>aSem[k]), borderColor: COLORS.danger, fill: true, backgroundColor: 'rgba(198,40,40,0.05)', tension: 0.3 }] }, options: {...baseOptionsWithX, plugins: {...baseOptionsWithX.plugins, datalabels: {...baseOptionsWithX.plugins.datalabels, formatter: v => 'L '+(v/1000).toFixed(1)+'K'}}} });
+    destroyChart('chartAjuSemanal'); new Chart(document.getElementById('chartAjuSemanal'), { type: 'line', data: { labels: Object.keys(aSem).sort(), datasets: [{ data: Object.keys(aSem).sort().map(k=>aSem[k]), borderColor: COLORS.danger, fill: true, backgroundColor: 'rgba(198,40,40,0.1)', tension: 0.3 }] }, options: {...baseOptions, plugins: {...baseOptions.plugins, datalabels: {...baseOptions.plugins.datalabels, formatter: v => 'L '+(v/1000).toFixed(1)+'K'}}} });
     destroyChart('chartAjuMotivos'); new Chart(document.getElementById('chartAjuMotivos'), { type: 'doughnut', data: { labels: Object.keys(aMot), datasets: [{ data: Object.values(aMot), backgroundColor: PALETA, borderWidth:0 }] }, options: donutOptions });
     
     const tbA = document.querySelector('#tableAjuProv tbody'); if(tbA) tbA.innerHTML = Object.entries(aProv).sort((a,b)=>b[1].c - a[1].c).slice(0,10).map(p => `<tr><td class="text-left">${p[0]}</td><td class="text-right">${p[1].u.toLocaleString()}</td><td class="text-right" style="color:${COLORS.danger}; font-weight:700">L ${p[1].c.toLocaleString('en-US',{minimumFractionDigits:2})}</td></tr>`).join('');
@@ -581,8 +608,8 @@ function renderDevoluciones(f) {
     setKPI('kpi-dev-pct', env>0?(devBultos/env)*100:0, false, true);
 
     destroyChart('chartDevMotivos'); new Chart(document.getElementById('chartDevMotivos'), { type: 'pie', data: { labels: Object.keys(mot), datasets: [{ data: Object.values(mot), backgroundColor: PALETA, borderWidth:0 }] }, options: donutOptions });
-    destroyChart('chartDevSemanal'); new Chart(document.getElementById('chartDevSemanal'), { type: 'bar', data: { labels: Object.keys(sem).sort(), datasets: [{ data: Object.keys(sem).sort().map(k=>sem[k]), backgroundColor: COLORS.warning, borderRadius: 6 }] }, options: baseOptionsWithX });
-    destroyChart('chartDevErrores'); new Chart(document.getElementById('chartDevErrores'), { type: 'bar', indexAxis: 'y', data: { labels: Object.keys(err), datasets: [{ data: Object.values(err), backgroundColor: COLORS.danger, borderRadius: 6 }] }, options: horizontalBarOptions });
+    destroyChart('chartDevSemanal'); new Chart(document.getElementById('chartDevSemanal'), { type: 'bar', data: { labels: Object.keys(sem).sort(), datasets: [{ data: Object.keys(sem).sort().map(k=>sem[k]), backgroundColor: COLORS.warning, borderRadius: 6 }] }, options: baseOptions });
+    destroyChart('chartDevErrores'); new Chart(document.getElementById('chartDevErrores'), { type: 'bar', indexAxis: 'y', data: { labels: Object.keys(err), datasets: [{ data: Object.values(err), backgroundColor: COLORS.danger, borderRadius: 6 }] }, options: baseOptions });
     
     const tb = document.querySelector('#tableDevTiendas tbody'); 
     if(tb) tb.innerHTML = Object.entries(tObj).sort((a,b)=>b[1].b - a[1].b).slice(0,10).map(p => `<tr><td class="text-left">${p[0]}</td><td class="text-right">${p[1].b}</td><td class="text-right">${p[1].u}</td><td class="text-right" style="color:${COLORS.danger}; font-weight:700">L ${p[1].c.toLocaleString('en-US',{minimumFractionDigits:2})}</td></tr>`).join('');
@@ -608,65 +635,43 @@ function renderInventario(f) {
     
     setKPI('kpi-inv-pos', p, true); setKPI('kpi-inv-neg', n, true); setKPI('kpi-inv-neto', p-n, true);
     
-    destroyChart('chartInvNegativos'); new Chart(document.getElementById('chartInvNegativos'), { type: 'bar', data: { labels: ['S1', 'S2', 'S3', 'S4'], datasets: [{ data: [5000, 3000, 8000, 2000], backgroundColor: COLORS.danger, borderRadius: 6 }] }, options: baseOptionsWithX });
+    destroyChart('chartInvNegativos'); new Chart(document.getElementById('chartInvNegativos'), { type: 'bar', data: { labels: ['S1', 'S2', 'S3', 'S4'], datasets: [{ data: [5000, 3000, 8000, 2000], backgroundColor: COLORS.danger, borderRadius: 6 }] }, options: baseOptions });
     
     // Top 15 Departamentos
     let depArr = Object.keys(dep).map(k=>({n:k, v:dep[k]})).sort((a,b)=>b.v-a.v).slice(0,15);
-    destroyChart('chartInvDept'); new Chart(document.getElementById('chartInvDept'), { type: 'bar', indexAxis: 'y', data: { labels: depArr.map(x=>x.n), datasets: [{ data: depArr.map(x=>x.v), backgroundColor: PALETA, borderRadius: 6 }] }, options: {...horizontalBarOptions, plugins: {...horizontalBarOptions.plugins, datalabels: {display:false}}} });
+    destroyChart('chartInvDept'); new Chart(document.getElementById('chartInvDept'), { type: 'bar', indexAxis: 'y', data: { labels: depArr.map(x=>x.n), datasets: [{ data: depArr.map(x=>x.v), backgroundColor: PALETA, borderRadius: 6 }] }, options: {...baseOptions, plugins: {...baseOptions.plugins, datalabels: {display:false}}} });
     
     // Top 20 Divisiones
     let allDiv = [...new Set([...Object.keys(divP), ...Object.keys(divN)])];
     let divArr = allDiv.map(k=>({n:k, p:divP[k]||0, n:divN[k]||0, t:(divP[k]||0)+(divN[k]||0)})).sort((a,b)=>b.t-a.t).slice(0,20);
-    destroyChart('chartInvDivPN'); new Chart(document.getElementById('chartInvDivPN'), { type: 'bar', data: { labels: divArr.map(x=>x.n), datasets: [{ label:'Positivo', data: divArr.map(x=>x.p), backgroundColor: COLORS.success }, { label:'Negativo', data: divArr.map(x=>x.n), backgroundColor: COLORS.danger }] }, options: {...baseOptionsWithX, plugins: { legend: {display:true}, datalabels: {display:false} } } });
+    destroyChart('chartInvDivPN'); new Chart(document.getElementById('chartInvDivPN'), { type: 'bar', data: { labels: divArr.map(x=>x.n), datasets: [{ label:'Positivo', data: divArr.map(x=>x.p), backgroundColor: COLORS.success }, { label:'Negativo', data: divArr.map(x=>x.n), backgroundColor: COLORS.danger }] }, options: {...baseOptions, plugins: { legend: {display:true}, datalabels: {display:false} } } });
     
     destroyChart('chartInvTipo'); new Chart(document.getElementById('chartInvTipo'), { type: 'doughnut', data: { labels: Object.keys(tip), datasets: [{ data: Object.values(tip), backgroundColor: PALETA, borderWidth:0 }] }, options: donutOptions });
 }
 
 // ==========================================
-// 13. SEGUNDA D'S (FLUJOS INTEGRADOS)
+// 13. SEGUNDA D'S
 // ==========================================
-function renderSegunda(filtro) {
+function renderSegunda() {
     const prov = globalData['21-segunda_proveedor.csv']||[]; const pvC = {}; const pvB = {}; const pvSem = {};
     prov.forEach(r => { const p = getS(r, ['PROVEEDOR'])||'Otros'; const c = parseNum(getS(r, ['COSTO IMP', 'COSTO TOTAL', 'COSTO'])); const b = parseNum(getS(r, ['FARDOS', 'BULTOS'])); pvC[p] = (pvC[p]||0) + c; pvB[p] = (pvB[p]||0) + b; pvSem[getS(r, ['SEMANA', 'SEM'])||'SN'] = (pvSem[getS(r, ['SEMANA', 'SEM'])||'SN']||0) + b; });
     destroyChart('chartSegProvCosto'); new Chart(document.getElementById('chartSegProvCosto'), { type: 'pie', data: { labels: Object.keys(pvC), datasets: [{ data: Object.values(pvC), backgroundColor: PALETA, borderWidth:0 }] }, options: donutOptions });
-    destroyChart('chartSegProvBultos'); new Chart(document.getElementById('chartSegProvBultos'), { type: 'bar', data: { labels: Object.keys(pvB), datasets: [{ data: Object.values(pvB), backgroundColor: COLORS.accent, borderRadius: 6 }] }, options: baseOptionsWithX });
-    destroyChart('chartSegProvSemanal'); new Chart(document.getElementById('chartSegProvSemanal'), { type: 'line', data: { labels: Object.keys(pvSem).sort(), datasets: [{ data: Object.keys(pvSem).sort().map(k=>pvSem[k]), borderColor: COLORS.accent, fill: true, backgroundColor: 'rgba(255,111,0,0.05)', tension: 0.3 }] }, options: baseOptionsWithX });
+    destroyChart('chartSegProvBultos'); new Chart(document.getElementById('chartSegProvBultos'), { type: 'bar', data: { labels: Object.keys(pvB), datasets: [{ data: Object.values(pvB), backgroundColor: COLORS.accent, borderRadius: 6 }] }, options: baseOptions });
+    destroyChart('chartSegProvSemanal'); new Chart(document.getElementById('chartSegProvSemanal'), { type: 'line', data: { labels: Object.keys(pvSem).sort(), datasets: [{ data: Object.keys(pvSem).sort().map(k=>pvSem[k]), borderColor: COLORS.accent, fill: true, backgroundColor: 'rgba(255,111,0,0.1)', tension: 0.3 }] }, options: baseOptions });
     const tbP = document.querySelector('#tableSegProv tbody'); if(tbP) tbP.innerHTML = Object.entries(pvC).sort((a,b)=>b[1]-a[1]).map(p => `<tr><td class="text-left">${p[0]}</td><td class="text-right">${pvB[p[0]]}</td><td class="text-right" style="color:${COLORS.success}; font-weight:700">L ${p[1].toLocaleString('en-US',{minimumFractionDigits:2})}</td></tr>`).join('');
 
     const prod = globalData['20-segunda_produccion.csv']||[]; const pd = {}; const pdSem = {};
     prod.forEach(r => { const u = parseNum(getS(r, ['UNIDADES', 'CANTIDAD'])); pd[getS(r, ['AREA', 'ÁREA'])||'Otros'] = (pd[getS(r, ['AREA', 'ÁREA'])||'Otros']||0) + u; pdSem[getS(r, ['SEMANA', 'SEM'])||'SN'] = (pdSem[getS(r, ['SEMANA', 'SEM'])||'SN']||0) + u; });
-    destroyChart('chartSegArea'); new Chart(document.getElementById('chartSegArea'), { type: 'bar', data: { labels: Object.keys(pd), datasets: [{ data: Object.values(pd), backgroundColor: COLORS.primary, borderRadius: 6 }] }, options: baseOptionsWithX });
-    destroyChart('chartSegProdSemanal'); new Chart(document.getElementById('chartSegProdSemanal'), { type: 'bar', data: { labels: Object.keys(pdSem).sort(), datasets: [{ data: Object.keys(pdSem).sort().map(k=>pdSem[k]), backgroundColor: COLORS.primaryLight, borderRadius: 6 }] }, options: baseOptionsWithX });
+    destroyChart('chartSegArea'); new Chart(document.getElementById('chartSegArea'), { type: 'bar', data: { labels: Object.keys(pd), datasets: [{ data: Object.values(pd), backgroundColor: COLORS.primary, borderRadius: 6 }] }, options: baseOptions });
+    destroyChart('chartSegProdSemanal'); new Chart(document.getElementById('chartSegProdSemanal'), { type: 'bar', data: { labels: Object.keys(pdSem).sort(), datasets: [{ data: Object.keys(pdSem).sort().map(k=>pdSem[k]), backgroundColor: COLORS.primaryLight, borderRadius: 6 }] }, options: baseOptions });
     destroyChart('chartSegMerma'); new Chart(document.getElementById('chartSegMerma'), { type: 'doughnut', data: { labels: ['Aprobado', 'Merma'], datasets: [{ data: [95, 5], backgroundColor: [COLORS.success, COLORS.danger], borderWidth:0 }] }, options: donutOptions });
 
-    // ETAPA 3 DIGITACION (CON FLUJOS COMO DISTRIBUCION)
-    const dig = globalData['19-digitacion_segunda.csv']||[]; 
-    let digFilt = filtro === 'global' ? dig : dig.filter(r => tipoTienda(getS(r, ['TIENDA', 'DESTINO', 'SUCURSAL'])) === filtro);
-
-    let dUTot = 0; let dBTot = 0; const dComp = {}; const dSem = {}; const dDiv = {u:[], b:[]}; const dT = {};
-    digFilt.forEach(r => { 
-        const u = parseNum(getS(r, ['UNIDADES', 'CANTIDAD'])); 
-        const b = parseNum(getS(r, ['BULTOS', 'FARDOS', 'CANTIDAD BULTOS'])); 
-        dUTot += u; dBTot += b;
-        dComp[getS(r, ['TIPO TRANSFERENCIA', 'COMPAÑIA', 'COMPAÑÍA'])||'Otros'] = (dComp[getS(r, ['TIPO TRANSFERENCIA', 'COMPAÑIA', 'COMPAÑÍA'])||'Otros']||0) + b;
-        dSem[getS(r, ['SEMANA', 'SEM'])||'SN'] = (dSem[getS(r, ['SEMANA', 'SEM'])||'SN']||0) + u;
-        const div = getS(r, ['DIVISION', 'DIVISIÓN', 'DEPARTAMENTO'])||'Otros'; if(!dDiv[div]) dDiv[div] = {u:0, b:0}; dDiv[div].u += u; dDiv[div].b += b;
-        const t = getS(r, ['TIENDA', 'DESTINO', 'SUCURSAL'])||'Otros'; if(!dT[t]) dT[t] = {u:0, b:0}; dT[t].u += u; dT[t].b += b;
-    });
-
-    setKPI('kpi-seg-und', dUTot); setKPI('kpi-seg-bul', dBTot); setKPI('kpi-seg-cumpl', dUTot>0?(dUTot/150000)*100:0, false, true);
-
-    let sDivArr = Object.keys(dDiv).map(k => ({name:k, u: dDiv[k].u, b: dDiv[k].b})).sort((a,b) => b.u - a.u).slice(0, 20);
-
-    destroyChart('chartSegDigComp'); new Chart(document.getElementById('chartSegDigComp'), { type: 'doughnut', data: { labels: Object.keys(dComp), datasets: [{ data: Object.values(dComp), backgroundColor: PALETA, borderWidth:0 }] }, options: donutOptions });
-    destroyChart('chartSegDigSemanal'); new Chart(document.getElementById('chartSegDigSemanal'), { type: 'line', data: { labels: Object.keys(dSem).sort(), datasets: [{ data: Object.keys(dSem).sort().map(k=>dSem[k]), borderColor: COLORS.success, fill: true, backgroundColor: 'rgba(46,125,50,0.05)', tension: 0.3 }] }, options: baseOptionsWithX });
-    destroyChart('chartSegDigDiv'); new Chart(document.getElementById('chartSegDigDiv'), { type: 'bar', data: { labels: sDivArr.map(x=>x.name), datasets: [{ label:'Unidades', data: sDivArr.map(x=>x.u), backgroundColor: COLORS.primary, borderRadius:4 }, { label:'Bultos', data: sDivArr.map(x=>x.b), backgroundColor: COLORS.accent, borderRadius:4 }] }, options: {...baseOptionsWithX, plugins: { legend: {display:true}, datalabels: {display: false} } } });
-    
-    const tbSD = document.querySelector('#tableSegDigTiendas tbody');
-    if(tbSD) tbSD.innerHTML = Object.entries(dT).sort((a,b)=>b[1].b - a[1].b).slice(0,10).map(p => `<tr><td class="text-left">${p[0]}</td><td class="text-right">${p[1].b.toLocaleString()}</td><td class="text-right">${p[1].u.toLocaleString()}</td></tr>`).join('');
+    const dig = globalData['19-digitacion_segunda.csv']||[]; const yoy = {}; const dSem = {}; let uTot = 0;
+    dig.forEach(r => { const u = parseNum(getS(r, ['UNIDADES', 'CANTIDAD'])); uTot += u; yoy[getS(r, ['AÑO', 'ANO'])||'2026'] = (yoy[getS(r, ['AÑO', 'ANO'])||'2026']||0) + u; dSem[getS(r, ['SEMANA', 'SEM'])||'SN'] = (dSem[getS(r, ['SEMANA', 'SEM'])||'SN']||0) + u; });
+    setKPI('kpi-seg-obj', 150000); setKPI('kpi-seg-cumpl', uTot>0?(uTot/150000)*100:0, false, true);
+    destroyChart('chartSegDigSemanal'); new Chart(document.getElementById('chartSegDigSemanal'), { type: 'line', data: { labels: Object.keys(dSem).sort(), datasets: [{ data: Object.keys(dSem).sort().map(k=>dSem[k]), borderColor: COLORS.success, fill: true, backgroundColor: 'rgba(46,125,50,0.1)', tension: 0.3 }] }, options: baseOptions });
+    destroyChart('chartSegDigYoY'); new Chart(document.getElementById('chartSegDigYoY'), { type: 'bar', data: { labels: Object.keys(yoy), datasets: [{ data: Object.values(yoy), backgroundColor: [COLORS.gray, COLORS.primaryLight], borderRadius: 6 }] }, options: baseOptions });
 }
 
-window.recepcionFilter = f => renderRecepcion(f); window.distribucionFilter = f => renderDistribucion(f); window.devolucionesFilter = f => renderDevoluciones(f); window.inventarioFilter = f => renderInventario(f); window.segundaFilter = f => renderSegunda(f);
-cargarTodo();
 window.recepcionFilter = f => renderRecepcion(f); window.distribucionFilter = f => renderDistribucion(f); window.devolucionesFilter = f => renderDevoluciones(f); window.inventarioFilter = f => renderInventario(f);
 cargarTodo();
